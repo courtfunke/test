@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Check-In Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #e9edf1;
+    --ink: #17212b;
+    --muted: #5d6b79;
+    --head: #1d3447;
+    --head-ink: #ffffff;
+    --cell: #ffffff;
+    --line: #cfd7de;
+    --ok: #e3f1e6;
+    --ok-ink: #14532d;
+    --late: #c8281e;
+    --late-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11181f; --ink: #e8edf2; --muted: #9aa8b5; --head: #2b4a63;
+      --cell: #1b252f; --line: #2f3d4a; --ok: #1d3a28; --ok-ink: #c6ecd2;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Barlow", system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+  body { padding: 14px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 20px; margin-bottom: 12px; }
+  h1 { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: 30px; margin: 0; letter-spacing: .01em; }
+  .legend { display: flex; gap: 16px; align-items: center; font-size: 14px; color: var(--muted); }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .sw.ok { background: var(--ok); outline: 1px solid var(--ok-ink); }
+  .sw.late { background: var(--late); }
+  #status { font-size: 13px; color: var(--muted); }
+  #status.err { color: var(--late); font-weight: 600; }
+
+  .scroll { overflow-x: auto; }
+  .boards { min-width: 960px; }
+  .board { display: grid; gap: 6px; margin-bottom: 14px; }
+  .board.top { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+  .board.bottom { grid-template-columns: repeat(9, minmax(0, 1fr)); }
+  .team { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .team h2 {
+    margin: 0; background: var(--head); color: var(--head-ink);
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700;
+    font-size: clamp(14px, 1.45vw, 21px); line-height: 1.1; padding: 8px 4px; text-align: center;
+    min-height: 68px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    border-radius: 4px; overflow-wrap: anywhere;
+  }
+  .team h2 .att {
+    font-family: "Barlow", system-ui, sans-serif; font-weight: 600;
+    font-size: clamp(12px, 1.15vw, 16px); line-height: 1;
+    background: rgba(255,255,255,.2); border-radius: 10px; padding: 3px 9px;
+  }
+  .team h2 .att:empty { display: none; }
+  .cell {
+    background: var(--cell); border: 1px solid var(--line); border-radius: 4px;
+    padding: 7px 6px 8px; text-align: center; min-height: 82px;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  }
+  .cell .lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .cell .date { font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-weight: 700; font-size: clamp(16px, 1.7vw, 24px); line-height: 1.1; }
+  .cell .ago { font-size: 12px; }
+  .cell.ok { background: var(--ok); border-color: transparent; color: var(--ok-ink); }
+  .cell.ok .lbl { color: inherit; opacity: .8; }
+  .cell.late { background: var(--late); border-color: transparent; color: var(--late-ink); }
+  .cell.late .lbl { color: inherit; opacity: .9; }
+  .cell.loading .date { color: var(--muted); }
+
+</style>
+</head>
+<body>
+<header>
+  <h1>Coach Check-Ins</h1>
+  <div class="legend">
+    <span><i class="sw ok"></i>Within 7 days</span>
+    <span><i class="sw late"></i>Over 7 days or none</span>
+    <span id="attNote"></span>
+    <span id="status">Loading…</span>
+  </div>
+</header>
+<div class="scroll"><div class="boards">
+<div class="board top" id="top"></div>
+<div class="board bottom" id="bottom"></div>
+</div></div>
+
+<script>
+(function () {
+  // ---- Settings -----------------------------------------------------------
+  var TEAMS = [
+    "Apex-GPT", "Automatrons", "Biobots", "Canopy Coders", "Codebreakers",
+    "Cybertronic", "Duckzilla", "Error 404: Chicken Not Found", "Headless Chickens",
+    "Legacy Builders", "MARS Eagles", "Master KARDS", "Phoenix Phorce", "Roz",
+    "Short Circuit", "Solar Stars", "Terrabyte Titans"
+  ];
+  var SOURCES = [
+    { key: "table",  label: "Last Table Run",          id: "1utrkYE3YpWn-AKgY5lhoFmQ7FGvEQHhXBwFSDBGJVdA" },
+    { key: "ip",     label: "Last IP Check",           id: "17Zh7LJiQbFs-sLiwTmg5WTq3Ex5H8j_lyTsZL25y7Js" },
+    { key: "design", label: "Last Robot Design Check", id: "10SxxzbSFaa9rOtcRI-VAzBwvMKuxlm-FKFkFOeIdYLE" }
+  ];
+  // Attendance sheet: checkbox columns, one per date (header cells like 11/13).
+  var ATTENDANCE = { id: "1AYnnZKWMSlEaSurD0V2IzXWqbJbrF6Iy0Jzf4muUCvg", gid: "1666277639" };
+  var OLD_AFTER_DAYS = 7;       // highlight red when older than this
+  var REFRESH_SECONDS = 60;     // how often to re-read the sheets
+  var DATE_COLUMN = "A";        // column holding the timestamp / date
+  var TEAM_COLUMN = "B";        // column holding the team name
+  // -------------------------------------------------------------------------
+
+  var attendance = null;
+  var attendanceFailed = false;
+  var data = {};   // data[sourceKey][normalizedTeam] = Date
+  var loaded = {}; // which sources loaded at least once
+  var failed = {};
+
+  function norm(s) { return String(s == null ? "" : s).toLowerCase().replace(/[^a-z0-9]/g, ""); }
+  var teamByNorm = {};
+  TEAMS.forEach(function (t) { teamByNorm[norm(t)] = t; });
+
+  // Spellings that appear in the sheets but differ from the official team name.
+  // Add more here if a team's entries ever fail to show up.
+  var ALIASES = {
+    "automotrons": "Automatrons",
+    "phoenixforce": "Phoenix Phorce",
+    "terratbyetitans": "Terrabyte Titans",
+    "terabytetitans": "Terrabyte Titans"
+  };
+
+  // Matches a name typed in a sheet to an official team name. Handles
+  // "MARS Eagles (The)", "Headless Chicken", "Error 404", extra spaces, etc.
+  function resolveTeam(raw) {
+    var n = norm(String(raw == null ? "" : raw).replace(/\(the\)/ig, "").replace(/^\s*the\s+/i, ""));
+    if (!n) return null;
+    if (teamByNorm[n]) return teamByNorm[n];
+    if (ALIASES[n]) return ALIASES[n];
+    if (n.length >= 4) {
+      for (var i = 0; i < TEAMS.length; i++) {
+        var t = norm(TEAMS[i]);
+        if (t.indexOf(n) === 0 || n.indexOf(t) === 0) return TEAMS[i];
+      }
+    }
+    return null;
+  }
+
+  // Build the layout: 9 teams on the first row, 8 on the second.
+  function build() {
+    TEAMS.forEach(function (team, i) {
+      var col = document.createElement("div");
+      col.className = "team";
+      var h = document.createElement("h2");
+      var nm = document.createElement("span");
+      nm.textContent = team;
+      var at = document.createElement("span");
+      at.className = "att";
+      at.id = "att-" + i;
+      h.appendChild(nm);
+      h.appendChild(at);
+      col.appendChild(h);
+      SOURCES.forEach(function (src) {
+        var c = document.createElement("div");
+        c.className = "cell loading";
+        c.id = "c-" + i + "-" + src.key;
+        c.innerHTML = '<span class="lbl"></span><span class="date">…</span><span class="ago"></span>';
+        c.querySelector(".lbl").textContent = src.label;
+        col.appendChild(c);
+      });
+      document.getElementById(i < 8 ? "top" : "bottom").appendChild(col);
+    });
+  }
+
+  // Reads the attendance sheet. Finds the most recent date column (today or earlier)
+  // that has at least one checked box, then counts checked boxes per team.
+  function parseAttendance(table, now) {
+    var cols = table.cols || [], rows = table.rows || [];
+    function lab(i) { return String(cols[i] && cols[i].label || "").trim(); }
+    function dateFromLabel(t) {
+      var m = String(t).trim().match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+      if (!m) return null;
+      var y = m[3] ? +m[3] : now.getFullYear();
+      if (y < 100) y += 2000;
+      var d = new Date(y, +m[1] - 1, +m[2]);
+      if (!m[3] && d - now > 30 * 86400000) d = new Date(y - 1, +m[1] - 1, +m[2]); // no year given: assume the most recent one
+      return d;
+    }
+    var headerOf = function (i) { return lab(i); };
+    var anyDate = false, i;
+    for (i = 0; i < cols.length; i++) if (dateFromLabel(lab(i))) { anyDate = true; break; }
+    if (!anyDate && rows.length) {            // header row came through as data instead
+      var first = rows[0].c || [];
+      headerOf = function (j) { var c = first[j]; return c ? String(c.f != null ? c.f : (c.v != null ? c.v : "")).trim() : ""; };
+      rows = rows.slice(1);
+    }
+    var teamCol = 3, firstCol = 4, lastCol = 5, dateCols = [];
+    for (i = 0; i < cols.length; i++) {
+      var h = headerOf(i);
+      if (/^team$/i.test(h)) teamCol = i;
+      else if (/^first$/i.test(h)) firstCol = i;
+      else if (/^last$/i.test(h)) lastCol = i;
+      var dt = dateFromLabel(h);
+      if (dt) dateCols.push({ idx: i, date: dt });
+    }
+    function val(c) { return c ? (c.v != null ? c.v : c.f) : null; }
+    function checked(c) { var v = val(c); return v === true || String(v).toUpperCase() === "TRUE"; }
+
+    var members = [];
+    rows.forEach(function (r) {
+      var c = r.c || [];
+      var team = resolveTeam(val(c[teamCol]));
+      var name = String(val(c[firstCol]) || "") + String(val(c[lastCol]) || "");
+      if (team && name.trim()) members.push({ team: team, c: c });
+    });
+
+    var endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    var best = null;
+    dateCols.forEach(function (dc) {
+      if (dc.date > endOfToday) return;
+      var any = members.some(function (m) { return checked(m.c[dc.idx]); });
+      if (any && (!best || dc.date > best.date)) best = dc;
+    });
+    if (!best) return null;
+
+    var counts = {};
+    members.forEach(function (m) {
+      var k = m.team;
+      counts[k] = counts[k] || { present: 0, total: 0 };
+      counts[k].total++;
+      if (checked(m.c[best.idx])) counts[k].present++;
+    });
+    return { date: best.date, counts: counts };
+  }
+
+  function parseCell(cell) {
+    if (!cell) return null;
+    var v = cell.v;
+    if (typeof v === "string") {
+      var m = v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?/);
+      if (m) return new Date(+m[1], +m[2], +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+      var d = new Date(cell.f || v);
+      return isNaN(d) ? null : d;
+    }
+    if (typeof v === "number") return null;
+    if (cell.f) { var d2 = new Date(cell.f); return isNaN(d2) ? null : d2; }
+    return null;
+  }
+
+  function dayStart(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  function daysAgo(d) {
+    return Math.round((dayStart(new Date()) - dayStart(d)) / 86400000);
+  }
+
+  function fmtDate(d) {
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function agoText(n) {
+    if (n <= 0) return "Today";
+    if (n === 1) return "Yesterday";
+    return n + " days ago";
+  }
+
+  function render() {
+    TEAMS.forEach(function (team, i) {
+      var key = norm(team);
+      var attEl = document.getElementById("att-" + i);
+      var cnt = attendance && attendance.counts[team];
+      attEl.textContent = cnt ? cnt.present + "/" + cnt.total + " here" : "";
+      attEl.title = cnt ? "Checked in on " + fmtDate(attendance.date) : "";
+      SOURCES.forEach(function (src) {
+        var el = document.getElementById("c-" + i + "-" + src.key);
+        var dateEl = el.querySelector(".date");
+        var agoEl = el.querySelector(".ago");
+        if (!loaded[src.key]) {
+          el.className = "cell loading";
+          dateEl.textContent = failed[src.key] ? "Unavailable" : "…";
+          agoEl.textContent = "";
+          return;
+        }
+        var d = data[src.key][key];
+        if (!d) {
+          el.className = "cell late";
+          dateEl.textContent = "No check yet";
+          agoEl.textContent = "";
+          return;
+        }
+        var n = daysAgo(d);
+        el.className = "cell " + (n > OLD_AFTER_DAYS ? "late" : "ok");
+        dateEl.textContent = fmtDate(d);
+        agoEl.textContent = agoText(n);
+      });
+    });
+  }
+
+  function updateNote() {
+    var el = document.getElementById("attNote");
+    if (attendanceFailed) { el.textContent = "Attendance unavailable"; el.style.color = "var(--late)"; return; }
+    el.style.color = "";
+    el.textContent = attendance ? "Attendance for " + fmtDate(attendance.date) : "No attendance checked yet";
+  }
+
+  function setStatus(msg, isErr) {
+    var s = document.getElementById("status");
+    s.textContent = msg;
+    s.className = isErr ? "err" : "";
+  }
+
+  var callbackCount = 0;
+  function fetchSource(src) {
+    return new Promise(function (resolve) {
+      var name = "__gviz_" + src.key + "_" + (++callbackCount);
+      var script = document.createElement("script");
+      var done = false;
+      function cleanup() {
+        done = true;
+        try { delete window[name]; } catch (e) { window[name] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      var timer = setTimeout(function () { if (!done) { cleanup(); resolve(false); } }, 20000);
+      window[name] = function (resp) {
+        clearTimeout(timer);
+        var ok = false;
+        if (resp && resp.status === "ok" && resp.table) {
+          var latest = {};
+          resp.table.rows.forEach(function (row) {
+            var c = row.c || [];
+            var team = resolveTeam(c[1] && (c[1].v != null ? c[1].v : c[1].f));
+            var d = parseCell(c[0]);
+            if (team && d && (!latest[norm(team)] || d > latest[norm(team)])) latest[norm(team)] = d;
+          });
+          data[src.key] = latest;
+          loaded[src.key] = true;
+          failed[src.key] = false;
+          ok = true;
+        }
+        cleanup();
+        resolve(ok);
+      };
+      script.onerror = function () { clearTimeout(timer); if (!done) { cleanup(); resolve(false); } };
+      var query = encodeURIComponent("select " + DATE_COLUMN + ", " + TEAM_COLUMN);
+      script.src = "https://docs.google.com/spreadsheets/d/" + src.id +
+        "/gviz/tq?headers=0&tqx=" + encodeURIComponent("out:json;responseHandler:" + name) +
+        "&tq=" + query + "&_=" + Date.now();
+      document.body.appendChild(script);
+    });
+  }
+
+  function fetchAttendance() {
+    return new Promise(function (resolve) {
+      var name = "__gviz_att_" + (++callbackCount);
+      var script = document.createElement("script");
+      var done = false;
+      function cleanup() {
+        done = true;
+        try { delete window[name]; } catch (e) { window[name] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      var timer = setTimeout(function () { if (!done) { cleanup(); resolve(false); } }, 20000);
+      window[name] = function (resp) {
+        clearTimeout(timer);
+        var ok = false;
+        if (resp && resp.status === "ok" && resp.table) {
+          try { attendance = parseAttendance(resp.table, new Date()); ok = true; } catch (e) { ok = false; }
+        }
+        cleanup();
+        resolve(ok);
+      };
+      script.onerror = function () { clearTimeout(timer); if (!done) { cleanup(); resolve(false); } };
+      script.src = "https://docs.google.com/spreadsheets/d/" + ATTENDANCE.id +
+        "/gviz/tq?gid=" + ATTENDANCE.gid + "&headers=1&tqx=" + encodeURIComponent("out:json;responseHandler:" + name) +
+        "&tq=" + encodeURIComponent("select *") + "&_=" + Date.now();
+      document.body.appendChild(script);
+    });
+  }
+
+  function refresh() {
+    fetchAttendance().then(function (ok) { attendanceFailed = !ok; render(); updateNote(); });
+    Promise.all(SOURCES.map(fetchSource)).then(function (results) {
+      var bad = [];
+      results.forEach(function (ok, i) { if (!ok) { failed[SOURCES[i].key] = true; bad.push(SOURCES[i].label); } });
+      render();
+      if (bad.length) {
+        setStatus("Could not read: " + bad.join(", ") + ". Check that the sheet is shared with 'Anyone with the link'.", true);
+      } else {
+        setStatus("Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), false);
+      }
+    });
+  }
+
+  build();
+  render();
+  refresh();
+  setInterval(refresh, REFRESH_SECONDS * 1000);
+  setInterval(render, 5 * 60 * 1000); // keep "days ago" correct across midnight
+})();
+</script>
+</body>
+</html>

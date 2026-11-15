@@ -127,6 +127,11 @@
   .nest.done { background: var(--done); border-color: var(--done-deep); color: #fff; }
   .nest.done::after { content: "✓"; font-size: 1rem; color: #fff; }
   .nest.done span { display: none; }
+  .nest.skipped { background: #e5484d; border-color: #b4232a; color: #fff; animation: pulse 1.6s ease-in-out infinite; }
+  .nest.skipped::after { content: "!"; font-size: 1.1rem; font-weight: 900; }
+  .nest.skipped span { display: none; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,72,77,.45); } 50% { box-shadow: 0 0 0 7px rgba(229,72,77,0); } }
+  .who .pct.warn { background: #ffe1e1; color: #b4232a; }
   .egg {
     position: absolute; top: 50%; width: 46px; height: 58px; transform: translate(-50%, -78%);
     transition: left 1.1s cubic-bezier(.5,1.5,.45,1);
@@ -373,6 +378,7 @@ function renderStats(list) {
   statsEl.innerHTML =
     `<div class="stat"><b>${total}</b><small>Eggs in the nest</small></div>` +
     STEPS.map((st, i) => `<div class="stat"><b>${counts[i]}</b><small>${st} done</small></div>`).join("") +
+    `<div class="stat"><b style="color:#b4232a">❗ ${list.filter(s => STEPS.some((st, i) => !s.done[st] && i < s.furthest)).length}</b><small>Skipped a step</small></div>` +
     `<div class="stat hatched"><b>🐣 ${hatched}</b><small>Fully hatched</small></div>`;
 }
 
@@ -425,6 +431,7 @@ function render() {
     const hatched = s.doneCount === STEPS.length;
     const meta = [s.group && `Group ${esc(s.group)}`, s.teacher && esc(s.teacher)].filter(Boolean).join(" · ");
     const nextStep = STEPS.find(st => !s.done[st]);
+    const skipped = STEPS.filter((st, i) => !s.done[st] && i < s.furthest);
     const label = hatched
       ? `${esc(s.name)} has finished all five steps`
       : `${esc(s.name)} has finished ${s.doneCount} of 5 steps; next up: ${nextStep}`;
@@ -433,12 +440,12 @@ function render() {
         <div class="who">
           <b>${esc(s.name)}</b>
           <span>${meta}</span>
-          <span class="pct">${hatched ? "🐣 Hatched!" : `${s.doneCount}/5 · next: ${nextStep}`}</span>
+          ${skipped.length ? `<span class="pct warn">❗ Skipped: ${skipped.join(", ")}</span>` : `<span class="pct">${hatched ? "🐣 Hatched!" : `${s.doneCount}/5 · next: ${nextStep}`}</span>`}
         </div>
         <div class="track">
           <div class="rail"></div>
           <div class="fill" data-to="${pct}" style="width:${startPct}%"></div>
-          ${STEPS.map((st, i) => `<div class="nest${s.done[st] ? " done" : ""}" data-step="${st}" style="left:${(i / (STEPS.length - 1)) * 100}%" title="${st}${s.done[st] ? " ✓" : ""}"><span>${i + 1}</span></div>`).join("")}
+          ${STEPS.map((st, i) => `<div class="nest${s.done[st] ? " done" : (i < s.furthest ? " skipped" : "")}" data-step="${st}" style="left:${(i / (STEPS.length - 1)) * 100}%" title="${st}${s.done[st] ? " ✓" : (i < s.furthest ? " — skipped! Go back and finish this step" : "")}"><span>${i + 1}</span></div>`).join("")}
           <div class="egg${moved ? " bounce" : ""}" data-to="${pct}" data-key="${esc(key)}" style="left:${startPct}%">${eggSvg(hatched)}</div>
         </div>
       </article>`;

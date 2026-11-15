@@ -336,7 +336,8 @@ function studentRow(s) {
   const skipped = STEPS.filter((st, i) => !s.done[st] && i < s.furthest);
   const nextStep = STEPS.find(st => !s.done[st]);
   const segW = stepPos(1);
-  const sign = s.furthest >= 0 && NEXT_SIGNS[s.furthest]
+  // Only show the next-step sign when every earlier step is finished (no skipped steps)
+  const sign = s.furthest >= 0 && s.doneCount === s.furthest + 1 && NEXT_SIGNS[s.furthest]
     ? `<div class="sign" style="left:${stepPos(s.furthest) + segW / 2}% "><i>${NEXT_SIGNS[s.furthest].icon}</i>${NEXT_SIGNS[s.furthest].text}</div>`
     : "";
   const tip = hatched ? "Finished all five steps!"

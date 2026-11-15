@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Egg Car Hatchery</title>
+<title>Egg Car Collision Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -62,10 +62,10 @@
   @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
   .ghead, .stu { display: grid; grid-template-columns: 6.8em 1fr; align-items: center; }
-  .ghead { height: 1.6em; border-bottom: 2px dotted var(--line); margin-bottom: .1em; }
-  .ghead b { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.05em; color: var(--nest-dark); white-space: nowrap; }
-  .ghead b small { font-family: "Nunito"; font-weight: 700; font-size: .7em; color: var(--ink-soft); margin-left: .3em; }
-  .labels { position: relative; height: 100%; margin: 0 1em; }
+  .ghead { min-height: 1.6em; padding: .1em 0; border-bottom: 2px dotted var(--line); margin-bottom: .1em; }
+  .ghead b { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.05em; line-height: 1.1; color: var(--nest-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: .3em; }
+  .ghead b small { display: block; font-family: "Nunito"; font-weight: 700; font-size: .68em; line-height: 1.2; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; }
+  .labels { position: relative; align-self: stretch; min-height: 1.4em; margin: 0 1em; }
   .labels span {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
     font-family: "Baloo 2", cursive; font-weight: 800; font-size: .52em; letter-spacing: .02em; color: var(--nest);
@@ -144,7 +144,7 @@
       <path d="M29 56q6 5 12 0" stroke="#3b2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
       <circle cx="20" cy="54" r="3.5" fill="#ffb3a7" opacity=".7"/><circle cx="50" cy="54" r="3.5" fill="#ffb3a7" opacity=".7"/>
     </svg>
-    <h1>Egg Car <span>Hatchery</span></h1>
+    <h1>Egg Car <span>Collision Lab</span></h1>
     <div class="tools">
       <input id="search" type="search" placeholder="🔍 Find a student…" aria-label="Search students">
       <select id="teacherFilter" aria-label="Filter by teacher"><option value="">All teachers</option></select>

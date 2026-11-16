@@ -1,921 +1,501 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Egg Car Collision Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --shell: #fffaf0; --shell-2: #fff3dc;
+    --yolk: #ffc93c; --yolk-deep: #f4a300;
+    --straw: #e9c98b; --nest: #a8743f; --nest-dark: #6e4a26;
+    --ink: #3b2a1a; --ink-soft: #7a634b;
+    --done: #7cc576; --done-deep: #3f8f3a;
+    --warn: #e5484d; --warn-deep: #b4232a;
+    --card: #ffffff; --line: #f0e2c6;
+    --shadow: 0 4px 14px rgba(110, 74, 38, .10);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Nunito", system-ui, sans-serif; color: var(--ink);
+    background: radial-gradient(circle at 10% 0%, #fff6e0 0, transparent 40%),
+                radial-gradient(circle at 90% 10%, #fdeccc 0, transparent 35%), var(--shell);
+    min-height: 100vh;
+  }
+  .wrap { padding: 10px 16px 12px; }
+
+  /* ---------- Compact header ---------- */
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .logo { width: 66px; height: 48px; flex: none; overflow: visible; }
+  .wall { width: 27px; height: 50px; flex: none; margin-left: 2px; }
+  .logo .car { animation: rumble .45s ease-in-out infinite alternate; transform-box: view-box; }
+  @keyframes rumble { from { translate: 0 0; } to { translate: 0 -1.5px; } }
+  @media (prefers-reduced-motion: reduce) { .logo .car { animation: none; } }
+  h1 { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.7rem; line-height: 1; margin: 0; color: var(--nest-dark); white-space: nowrap; }
+  h1 span { color: var(--yolk-deep); }
+  .tools { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
+  .tools input, .tools select {
+    font: inherit; font-weight: 600; font-size: .9rem; color: var(--ink);
+    background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-width: 0;
+  }
+  .tools input { width: 200px; }
+  .tools input:focus, .tools select:focus { outline: none; border-color: var(--yolk); }
+  .updated { font-size: .78rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
+  .tools button {
+    font: inherit; font-weight: 800; font-size: .85rem; cursor: pointer;
+    background: var(--yolk); color: var(--ink); border: none; border-radius: 999px;
+    padding: 6px 14px; box-shadow: 0 3px 0 var(--yolk-deep);
+  }
+  .tools button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--yolk-deep); }
+
+  /* ---------- Board: group bubbles in balanced columns.
+     Everything inside is sized in em, so the script can shrink or grow
+     the whole board (font-size) until the class fits on one screen. ---------- */
+  .board { column-gap: .8em; font-size: 16px; }
+  .group {
+    break-inside: avoid; display: inline-block; width: 100%;
+    background: var(--card); border: 2px solid var(--line); border-radius: 1em;
+    box-shadow: var(--shadow); padding: .4em .8em .3em; margin-bottom: .7em;
+    animation: pop .4s ease both;
+  }
+  .group.all-hatched { border-color: var(--yolk); background: linear-gradient(180deg, #fffbe8, #fff); }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .ghead, .stu { display: grid; grid-template-columns: 6.8em 1fr; align-items: center; }
+  .ghead { min-height: 1.6em; padding: .1em 0; border-bottom: 2px dotted var(--line); margin-bottom: .1em; }
+  .ghead b { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.05em; line-height: 1.1; color: var(--nest-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: .3em; }
+  .ghead b small { display: block; font-family: "Nunito"; font-weight: 700; font-size: .68em; line-height: 1.2; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; }
+  .labels { position: relative; align-self: stretch; min-height: 1.4em; margin: 0 1em; }
+  .labels span {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    font-family: "Baloo 2", cursive; font-weight: 800; font-size: .52em; letter-spacing: .02em; color: var(--nest);
+  }
+
+  .stu { height: 3.05em; }
+  .name { font-weight: 800; font-size: .92em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: .3em; }
+  .stu.hatched .name::after { content: " 🐣"; }
+  .stu.flag .name { color: var(--warn-deep); }
+
+  .track { position: relative; height: 100%; margin: 0 1em; }
+  .rail, .fill { position: absolute; top: 50%; height: .32em; transform: translateY(-50%); border-radius: 99px; }
+  .rail-end {
+    position: absolute; top: 50%; left: 80%; right: 0; transform: translateY(-50%);
+    border-top: .14em dashed var(--straw); opacity: .8;
+  }
+  .sign {
+    position: absolute; top: calc(50% + 1.35em); transform: translateX(-50%);
+    white-space: nowrap; line-height: 1.2;
+    font-size: .52em; font-weight: 800; color: var(--nest-dark);
+    background: var(--yolk); border-radius: 99px; padding: .15em .65em .2em;
+    box-shadow: 0 .15em 0 var(--yolk-deep); z-index: 3;
+    animation: signPop .5s .6s cubic-bezier(.5,1.8,.5,1) both;
+  }
+  .sign::after {
+    content: ""; position: absolute; left: 50%; top: -.4em; transform: translateX(-50%);
+    border: .4em solid transparent; border-bottom-color: var(--yolk); border-top: 0;
+  }
+  .sign i { font-style: normal; margin-right: .2em; }
+  @keyframes signPop { from { opacity: 0; transform: translateX(-50%) scale(.4); } }
+  .rail { left: 0; right: 20%; background: repeating-linear-gradient(90deg, var(--straw) 0 .5em, #f3dcae .5em .9em); }
+  .fill { left: 0; background: linear-gradient(90deg, var(--yolk), var(--yolk-deep)); transition: width 1s cubic-bezier(.5,1.6,.4,1); }
+  .nest {
+    position: absolute; top: 50%; width: 1.2em; height: 1.2em; transform: translate(-50%, -50%);
+    border-radius: 50%; background: #fff; border: .14em solid var(--straw);
+    display: grid; place-items: center; color: var(--straw); font-weight: 800;
+  }
+  .nest span { font-size: .55em; }
+  .nest.done { background: var(--done); border-color: var(--done-deep); color: #fff; }
+  .nest.done::after { content: "✓"; font-size: .7em; }
+  .nest.skipped { background: var(--warn); border-color: var(--warn-deep); color: #fff; animation: pulse 1.6s ease-in-out infinite; }
+  .nest.skipped::after { content: "!"; font-size: .8em; font-weight: 900; }
+  .nest.done span, .nest.skipped span { display: none; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,72,77,.45); } 50% { box-shadow: 0 0 0 .35em rgba(229,72,77,0); } }
+  .egg {
+    position: absolute; top: 50%; width: 1.45em; height: 1.8em; transform: translate(-50%, -82%);
+    transition: left 1.1s cubic-bezier(.5,1.5,.45,1);
+    filter: drop-shadow(0 .12em .1em rgba(110,74,38,.25)); z-index: 2; pointer-events: none;
+  }
+  .egg svg { width: 100%; height: 100%; display: block; }
+  .egg.bounce { animation: hop 1.1s ease; }
+  @keyframes hop { 0%,60%,100% { margin-top: 0; } 35% { margin-top: -.6em; } 75% { margin-top: -.2em; } }
+
+  .msg {
+    background: var(--card); border: 2px dashed var(--straw); border-radius: 18px;
+    padding: 24px 20px; text-align: center; color: var(--ink-soft); font-weight: 600; font-size: 16px;
+  }
+  .msg h2 { font-family: "Baloo 2", cursive; color: var(--nest-dark); margin: 0 0 6px; }
+  .msg code { background: var(--shell-2); padding: 2px 6px; border-radius: 6px; }
+
+  @media (max-width: 700px) {
+    .tools { margin-left: 0; width: 100%; }
+    .tools input { flex: 1 1 140px; width: auto; }
+    .ghead, .stu { grid-template-columns: 5.4em 1fr; }
+    .labels span { font-size: .46em; }
+  }
+</style>
 </head>
 <body>
-<title>Egg Crash Car Video</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
-<style>
-/* Layout: seven design-process steps on the left, a sticky "monitor" (preview + timeline + make/save) on the right; stacks on iPad portrait and phones. */
-:root{
-  --bg:#eef1f7; --panel:#ffffff; --sunk:#f5f7fb; --ink:#141a2e; --muted:#5a6380; --line:#dbe0ec;
-  --accent:#2b4fd8; --accent-ink:#ffffff; --mark:#ffd447; --danger:#c43c2c; --ok:#1f7a4a;
-  --seg-title:#2b4fd8; --seg-q:#e0902a; --seg-img:#3a9a6a; --seg-vid:#c4467a; --seg-end:#6a5bd0;
-  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
-  --body:Figtree,"Segoe UI",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0e1220; --panel:#161b2c; --sunk:#11162a; --ink:#e8ecf7; --muted:#99a2bf; --line:#283048;
-  --accent:#7d97ff; --accent-ink:#0e1220; --mark:#ffd447; --danger:#ff7a68; --ok:#5fd093; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0e1220; --panel:#161b2c; --sunk:#11162a; --ink:#e8ecf7; --muted:#99a2bf; --line:#283048;
-  --accent:#7d97ff; --accent-ink:#0e1220; --mark:#ffd447; --danger:#ff7a68; --ok:#5fd093; color-scheme:dark}
-*{box-sizing:border-box}
-[hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px;-webkit-text-size-adjust:100%}
-.wrap{max-width:1240px;margin:0 auto;display:grid;gap:24px}
-header.top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:-.01em}
-h1 span{background:linear-gradient(transparent 62%,var(--mark) 62%);padding:0 2px}
-.lede{margin:6px 0 0;color:var(--muted);max-width:60ch}
-.app{display:grid;gap:24px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:1000px){.app{grid-template-columns:minmax(0,1fr) minmax(0,480px);align-items:start}.monitor{position:sticky;top:16px}}
-fieldset#editor{border:0;margin:0;padding:0;min-width:0;display:grid;gap:16px}
-fieldset#editor:disabled{opacity:.55}
-.step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;gap:14px;min-width:0}
-.step-h{display:flex;align-items:center;gap:12px}
-.num{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-family:var(--mono);font-size:14px}
-.step.done .num{background:var(--ok);color:#fff}
-.step h2{font-family:var(--display);font-weight:800;font-size:22px;margin:0;line-height:1.15;letter-spacing:.02em}
-.step .ask{margin:0;font-weight:600}
-.hint{color:var(--muted);font-size:14px}
-label.f{display:grid;gap:6px;font-weight:600;font-size:15px;min-width:0}
-input[type=text],textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:11px 13px;width:100%;min-width:0}
-textarea{resize:vertical;min-height:96px}
-input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
-select{font:inherit;color:var(--ink);background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:9px 11px;width:100%}
-button,.btn{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 14px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px}
-button:hover,.btn:hover{border-color:var(--accent)}
-button:focus-visible,.btn:focus-within,.drop:focus-within{outline:2px solid var(--accent);outline-offset:2px}
-button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:12px 20px;font-size:17px;min-height:50px}
-button.primary:disabled{opacity:.45;cursor:not-allowed}
-button.danger{color:var(--danger)}
-.btn input,.drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.btn{position:relative}
-.drop{position:relative;border:2px dashed var(--line);border-radius:12px;padding:26px 16px;text-align:center;display:grid;gap:4px;place-items:center;cursor:pointer;background:var(--sunk);transition:border-color .15s,background .15s}
-.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--sunk))}
-.drop strong{font-family:var(--display);font-size:19px}
-.slot{display:grid;gap:10px}
-.filled{display:grid;gap:12px;grid-template-columns:minmax(0,220px) minmax(0,1fr);align-items:start;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--sunk)}
-@media (max-width:560px){.filled{grid-template-columns:minmax(0,1fr)}}
-.thumb{position:relative;aspect-ratio:16/10;background:#000;border-radius:8px;overflow:hidden;max-width:100%}
-.thumb img,.thumb canvas{width:100%;height:100%;object-fit:contain;display:block}
-.thumb .loading{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:13px}
-.thumb .badge{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.65);color:#fff;font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:6px}
-.fmeta{display:grid;gap:10px;min-width:0}
-.fname{font-weight:600;font-size:14px;overflow-wrap:anywhere}
-.fbtns{display:flex;gap:8px;flex-wrap:wrap}
-.err{color:var(--danger);font-size:14px;line-height:1.4}
-.trim{display:grid;gap:8px}
-.trim label{display:grid;gap:2px;font-size:14px;font-weight:600}
-.trim output{font-family:var(--mono);font-weight:500;color:var(--muted);font-size:13px}
-input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
-.yn{display:flex;gap:12px;flex-wrap:wrap}
-.yn label{position:relative;display:flex;align-items:center;gap:12px;border:2px solid var(--line);border-radius:12px;padding:12px 18px;cursor:pointer;font-family:var(--display);font-weight:800;font-size:22px;background:var(--sunk);min-width:140px}
-.yn input{position:absolute;opacity:0}
-.yn i{width:28px;height:28px;border-radius:7px;border:2px solid var(--muted);display:grid;place-items:center;background:var(--panel)}
-.yn input:checked+i{background:var(--accent);border-color:var(--accent)}
-.yn input:checked+i::after{content:"";width:8px;height:15px;border:solid var(--accent-ink);border-width:0 3px 3px 0;transform:translateY(-2px) rotate(45deg)}
-.yn label:has(input:checked){border-color:var(--accent)}
-.yn input:focus-visible+i{outline:2px solid var(--accent);outline-offset:3px}
-.notice{background:color-mix(in srgb,var(--mark) 30%,var(--panel));border:1px solid color-mix(in srgb,var(--mark) 70%,var(--line));border-radius:10px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;font-size:15px}
-.monitor{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px;min-width:0}
-.screen{background:#05070d;border-radius:10px;overflow:hidden;position:relative}
-.screen canvas{display:block;width:100%;height:auto;max-width:100%}
-.rec{position:absolute;left:10px;top:10px;background:#d8282b;color:#fff;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;display:flex;gap:6px;align-items:center}
-.rec::before{content:"";width:8px;height:8px;border-radius:50%;background:#fff;animation:blink 1s infinite}
-@keyframes blink{50%{opacity:.2}}
-@media (prefers-reduced-motion:reduce){.rec::before{animation:none}}
-.mhead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.mhead h2{font-family:var(--display);font-size:19px;margin:0}
-.tc{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
-.tc b{color:var(--ink);font-weight:500}
-.strip{display:flex;gap:3px;height:46px;border-radius:8px;overflow:hidden;background:var(--sunk);padding:3px}
-.strip button{flex-basis:0;min-width:8px;min-height:0;border:0;border-radius:5px;padding:0;position:relative;overflow:hidden;background-size:cover;background-position:center;color:#fff;font-family:var(--mono);font-size:10.5px;font-weight:500}
-.strip button span{position:absolute;left:4px;bottom:3px;text-shadow:0 1px 2px rgba(0,0,0,.8);white-space:nowrap}
-.strip button.sel{outline:2px solid var(--ink);outline-offset:-2px}
-.missing{font-size:14px;color:var(--muted);border-left:3px solid var(--mark);padding:2px 0 2px 10px}
-.opts{display:grid;gap:12px;border-top:1px solid var(--line);padding-top:12px}
-.opts .lab{font-weight:600;font-size:14px}
-.swatches{display:flex;gap:10px;flex-wrap:wrap}
-.swatches label{position:relative;display:grid;gap:3px;justify-items:center;font-size:12px;color:var(--muted);cursor:pointer}
-.swatches input{position:absolute;opacity:0}
-.swatches i{width:36px;height:36px;border-radius:50%;display:block;border:3px solid transparent;box-shadow:0 0 0 1px var(--line)}
-.swatches input:checked+i{border-color:var(--panel);box-shadow:0 0 0 2px var(--ink)}
-.swatches input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
-.optrow{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));align-items:end}
-.check{display:flex;gap:8px;align-items:center;font-weight:600;font-size:15px}
-.check input{accent-color:var(--accent);width:20px;height:20px}
-.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
-.bar i{display:block;height:100%;width:0;background:var(--accent)}
-.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.msg{font-size:15px;color:var(--muted);min-height:1.5em}
-.msg.bad{color:var(--danger)} .msg.good{color:var(--ok)}
-.result{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:14px}
-.result video{width:100%;max-height:60vh;background:#000;border-radius:10px;display:block}
-#holder{position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none;overflow:hidden}
-#holder video{width:2px;height:2px}
-</style>
-
 <div class="wrap">
-  <header class="top">
-    <div>
-      <h1>Egg Crash Car <span>Video</span></h1>
-      <p class="lede">Go through the seven steps, then tap <b>Make my video</b>. Your pictures, videos, and answers get put together into one video you can save to your iPad.</p>
+  <header>
+    <svg class="logo" viewBox="0 0 100 72" role="img" aria-label="An egg recklessly driving a race car">
+      <!-- speed lines -->
+      <g stroke="#e9c98b" stroke-width="3" stroke-linecap="round">
+        <line x1="1" y1="30" x2="12" y2="30"/><line x1="4" y1="41" x2="18" y2="41"/><line x1="0" y1="52" x2="10" y2="52"/>
+      </g>
+      <!-- dust kicked up by the back wheel -->
+      <g fill="#efdcb5"><circle cx="17" cy="63" r="5"/><circle cx="9" cy="66" r="3.5"/><circle cx="23" cy="68" r="3"/></g>
+      <g class="car" transform="rotate(-10 50 62)">
+        <!-- flying scarf -->
+        <path d="M43 37 C35 33 27 31 17 35 L20 40 C27 37 34 40 42 42z" fill="#3fa7d6"/>
+        <path d="M24 37 l-6 -6 M28 38 l-5 -7" stroke="#2b86b0" stroke-width="2" stroke-linecap="round"/>
+        <!-- the egg driver -->
+        <path d="M50 6C41 6 35 20 35 31c0 9 7 15 15 15s15-6 15-15C65 20 59 6 50 6z" fill="#fff" stroke="#e9c98b" stroke-width="2.5"/>
+        <path d="M36 22 h28" stroke="#6e4a26" stroke-width="3"/>
+        <circle cx="45" cy="23" r="5.2" fill="#bfe6ff" stroke="#6e4a26" stroke-width="2.5"/>
+        <circle cx="56.5" cy="23" r="5.2" fill="#bfe6ff" stroke="#6e4a26" stroke-width="2.5"/>
+        <circle cx="47" cy="23.5" r="1.9" fill="#3b2a1a"/><circle cx="58.5" cy="23.5" r="1.9" fill="#3b2a1a"/>
+        <path d="M43 31 q7 9 14 0z" fill="#3b2a1a"/><path d="M45 31.5 h10" stroke="#fff" stroke-width="1.6"/>
+        <!-- steering wheel -->
+        <path d="M60 41 l6 -5" stroke="#3b2a1a" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="67.5" cy="34.5" r="3.4" fill="none" stroke="#3b2a1a" stroke-width="2.2"/>
+        <!-- race car -->
+        <path d="M24 43h48c9 0 15 5 17 11v5H14c-2-9 2-16 10-16z" fill="#e5484d" stroke="#b4232a" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M84 46 l9 -3 v8z" fill="#ffc93c" stroke="#f4a300" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M22 51 h56" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="31" cy="61" r="8.5" fill="#3b2a1a"/><circle cx="31" cy="61" r="3.5" fill="#d9d2c5"/>
+        <circle cx="75" cy="61" r="8.5" fill="#3b2a1a"/><circle cx="75" cy="61" r="3.5" fill="#d9d2c5"/>
+      </g>
+    </svg>
+    <h1>Egg Car <span>Collision Lab</span></h1>
+    <svg class="wall" viewBox="0 0 28 52" role="img" aria-label="A brick wall">
+      <rect x="0" y="0" width="28" height="48" fill="#e8dcc8"/>
+      <rect x="0.75" y="0.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="0.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="8.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="8.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="8.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/><rect x="0.75" y="16.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="16.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="24.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="24.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="24.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/><rect x="0.75" y="32.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="32.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="40.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="40.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="40.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/>
+      <path d="M2 14 l5 4 -3 5 6 4" stroke="#6e3524" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="-2" y="48" width="32" height="4" rx="2" fill="#e9c98b"/>
+    </svg>
+    <div class="tools">
+      <input id="search" type="search" placeholder="🔍 Find a student…" aria-label="Search students">
+      <select id="teacherFilter" aria-label="Filter by teacher"><option value="">All teachers</option></select>
+      <span class="updated" id="updatedText">Loading…</span>
+      <button id="refreshBtn" type="button">↻ Refresh</button>
     </div>
-    <button type="button" id="sampleBtn">See an example</button>
   </header>
-
-  <div class="app">
-    <fieldset id="editor">
-      <div class="notice" id="sampleNotice" hidden>
-        <span>This is an example. Clear it before you add your own work.</span>
-        <button type="button" id="clearBtn">Clear everything</button>
-      </div>
-
-      <section class="step" id="st1">
-        <div class="step-h"><span class="num">1</span><h2>START</h2></div>
-        <label class="f">Your first name<input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="First name"></label>
-        <p class="ask">Add a picture of your finished car.</p>
-        <div class="slot" data-slot="car"></div>
-      </section>
-
-      <section class="step" id="st2">
-        <div class="step-h"><span class="num">2</span><h2>ASK</h2></div>
-        <label class="f">What was the problem you were trying to solve?<textarea id="ask" maxlength="400" placeholder="Type the problem here"></textarea></label>
-      </section>
-
-      <section class="step" id="st3">
-        <div class="step-h"><span class="num">3</span><h2>EXPLORE</h2></div>
-        <p class="ask">Add a good picture of your design.</p>
-        <div class="slot" data-slot="design"></div>
-      </section>
-
-      <section class="step" id="st4">
-        <div class="step-h"><span class="num">4</span><h2>MODEL</h2></div>
-        <p class="ask">Add a picture of the very first version of your car.</p>
-        <div class="slot" data-slot="first"></div>
-      </section>
-
-      <section class="step" id="st5">
-        <div class="step-h"><span class="num">5</span><h2>EXPLORE AND EXPLAIN</h2></div>
-        <p class="ask">Add one of your crash test videos.</p>
-        <div class="slot" data-slot="crash"></div>
-        <label class="f">What did you observe in this crash test?<textarea id="observe" maxlength="400" placeholder="Type your observations here"></textarea></label>
-      </section>
-
-      <section class="step" id="st6">
-        <div class="step-h"><span class="num">6</span><h2>TEST</h2></div>
-        <p class="ask">Add your final crash test video.</p>
-        <div class="slot" data-slot="final"></div>
-        <div class="f" role="radiogroup" aria-labelledby="survQ" style="display:grid;gap:8px">
-          <span id="survQ" style="font-weight:600">Did your egg survive the collision?</span>
-          <div class="yn">
-            <label><input type="radio" name="survived" value="yes"><i></i>Yes</label>
-            <label><input type="radio" name="survived" value="no"><i></i>No</label>
-          </div>
-        </div>
-      </section>
-
-      <section class="step" id="st7">
-        <div class="step-h"><span class="num">7</span><h2>IMPROVE</h2></div>
-        <label class="f">If you had one more day, what would you do differently to improve your car?<textarea id="improve" maxlength="400" placeholder="Type your ideas here"></textarea></label>
-      </section>
-    </fieldset>
-
-    <aside class="monitor" aria-label="Preview and make video">
-      <div class="mhead"><h2>Preview</h2><div class="tc">Length <b id="runtime">0:00</b></div></div>
-      <div class="screen"><canvas id="cv" width="1280" height="720"></canvas><div class="rec" id="recTag" hidden>REC <span id="recTime">0:00</span></div></div>
-      <div class="strip" id="strip" aria-label="Timeline. Tap a piece to preview it."></div>
-      <div class="missing" id="missing" hidden></div>
-      <div class="bar" id="bar" hidden><i id="barFill"></i></div>
-      <div class="actions">
-        <button type="button" class="primary" id="buildBtn">Make my video</button>
-        <button type="button" id="cancelBtn" hidden>Stop</button>
-      </div>
-      <div class="msg" id="msg">The video plays while it's being made, so it takes about as long as the video itself. Keep this screen open and don't switch apps until it's done.</div>
-      <div class="result" id="result" hidden>
-        <video id="out" controls playsinline></video>
-        <div class="actions">
-          <button type="button" class="primary" id="saveBtn">Save video</button>
-          <span class="hint" id="outInfo"></span>
-        </div>
-        <div class="msg" id="saveMsg"></div>
-        <div class="hint" id="diag" style="font-size:12px"></div>
-      </div>
-      <div class="opts">
-        <div class="lab">Card colors</div>
-        <div class="swatches" id="themes"></div>
-        <div class="optrow">
-          <label class="f" style="font-size:14px">Transitions
-            <select id="transition">
-              <option value="mixed">Mix it up</option>
-              <option value="crossfade">Crossfade</option>
-              <option value="slide">Slide</option>
-              <option value="zoom">Zoom</option>
-              <option value="wipe">Wipe</option>
-              <option value="fadeblack">Fade through black</option>
-            </select>
-          </label>
-          <label class="check"><input type="checkbox" id="keepAudio" checked> Keep video sound</label>
-        </div>
-      </div>
-    </aside>
-  </div>
+  <main class="board" id="board"><div class="msg">Gathering the eggs…</div></main>
 </div>
-<div id="holder" aria-hidden="true"></div>
 
 <script>
-(() => {
-const $ = s => document.querySelector(s);
-const DISPLAY = '"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif';
-const BODY = 'Figtree, "Segoe UI", system-ui, sans-serif';
-const SLOTS = {
-  car:    {kind:"image", chip:"MY FINISHED CAR", strip:"Car"},
-  design: {kind:"image", chip:"EXPLORE", caption:"My design", strip:"Explore"},
-  first:  {kind:"image", chip:"MODEL", caption:"The very first version of my car", strip:"Model"},
-  crash:  {kind:"video", chip:"EXPLORE AND EXPLAIN", caption:"Crash test", strip:"Crash"},
-  final:  {kind:"video", chip:"TEST", caption:"Final crash test", strip:"Final"}
-};
-const THEMES = {
-  cobalt:{label:"Cobalt", bg1:"#16205a", bg2:"#2b4fd8", fg:"#ffffff", accent:"#ffd447"},
-  sunset:{label:"Sunset", bg1:"#ff5e47", bg2:"#ffb547", fg:"#2a1206", accent:"#ffffff"},
-  forest:{label:"Forest", bg1:"#0f3826", bg2:"#2f7a4f", fg:"#f1fff5", accent:"#c4f56f"},
-  berry:{label:"Berry", bg1:"#3a0f37", bg2:"#b8336a", fg:"#fff4f8", accent:"#ffd0a8"},
-  chalk:{label:"Chalk", bg1:"#f7f6f1", bg2:"#dfe5ee", fg:"#171c2b", accent:"#2b4fd8"},
-  night:{label:"Night", bg1:"#05070d", bg2:"#1c2233", fg:"#f4f6fb", accent:"#4ee1c1"}
-};
-const TRANS_CYCLE = ["crossfade","slide","zoom","wipe","fadeblack"];
-const T_LEN = 0.8, PHOTO_SECS = 4.5, MAX_CLIP = 30;
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+const SHEET_ID   = "1kPS2ggL5fbPn51m6TvhCfranGeJ9z_0xDW5pOVneqvI";
+const SHEET_TAB  = "Form Responses 1";   // tab name at the bottom of the sheet
+const REFRESH_SECONDS = 60;               // how often the board reloads
 
-const state = {
-  name:"", ask:"", observe:"", survived:"", improve:"",
-  media:{car:null, design:null, first:null, crash:null, final:null},
-  s:{theme:"cobalt", transition:"mixed", keepAudio:true}
-};
-let plan = null, previewT = 1.6, building = null, ac = null, result = null, dl = null, sample = false;
+/* The five steps, matched to the sheet by the capitalised word in each column header. */
+const STEPS = ["ASK", "EXPLORE", "MODEL", "EVALUATE", "EXPLAIN"];
 
-/* ---------- saving work on this device ---------- */
-function saveDraft(){ try{
-  const trims = {}; for(const k in state.media){ const m = state.media[k]; if(m && m.kind === "video") trims[k] = {start:m.start, len:m.len}; }
-  localStorage.setItem("eggcar-draft", JSON.stringify({name:state.name, ask:state.ask, observe:state.observe, survived:state.survived, improve:state.improve, s:state.s, trims, sample}));
-}catch(e){} }
-function loadDraft(){ try{ const d = JSON.parse(localStorage.getItem("eggcar-draft")||"null"); if(!d) return {};
-  for(const k of ["name","ask","observe","survived","improve"]) state[k] = typeof d[k] === "string" ? d[k] : "";
-  if(d.s) Object.assign(state.s, d.s); if(!THEMES[state.s.theme]) state.s.theme = "cobalt";
-  sample = !!d.sample; return d.trims || {};
-}catch(e){ return {}; } }
-let idbP = null;
-function idb(){ if(idbP) return idbP; idbP = new Promise((res) => { try{
-  const r = indexedDB.open("eggcar-files", 1);
-  r.onupgradeneeded = () => r.result.createObjectStore("files");
-  r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null);
-}catch(e){ res(null); } }); return idbP; }
-async function idbDo(mode, fn){ const db = await idb(); if(!db) return null; return new Promise(res => { try{
-  const tx = db.transaction("files", mode), st = tx.objectStore("files"); const r = fn(st);
-  tx.oncomplete = () => res(r && r.result); tx.onerror = tx.onabort = () => res(null);
-}catch(e){ res(null); } }); }
-const storeFile = (slot, file) => idbDo("readwrite", st => st.put({blob:file, name:file.name, type:file.type}, slot));
-const dropFile = slot => idbDo("readwrite", st => st.delete(slot));
+/* =========================================================
+   Data loading (Google Visualization endpoint — no API key needed;
+   the sheet just has to be shared as "Anyone with the link can view")
+   ========================================================= */
+const baseUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?headers=1&sheet=${encodeURIComponent(SHEET_TAB)}`;
 
-/* ---------- helpers ---------- */
-const clamp = (v,a=0,b=1) => Math.max(a, Math.min(b, v));
-const easeIO = p => p<.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;
-const easeOut = p => 1-Math.pow(1-p,3);
-const fmt = s => { s = Math.max(0, Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); };
-const fmt1 = s => { s = Math.max(0, s); const m = Math.floor(s/60); return m + ":" + (s - m*60).toFixed(1).padStart(4,"0"); };
-const words = t => (t.trim().match(/\S+/g)||[]).length;
-const nm = () => state.name.trim();
-const possessive = n => n ? (/s$/i.test(n) ? n + "’" : n + "’s") : "";
-
-function wrap(ctx, text, maxW){
-  const out = [];
-  for(const para of String(text).split(/\n+/)){
-    const ws = para.split(/\s+/).filter(Boolean); let line = "";
-    for(let w of ws){
-      while(ctx.measureText(w).width > maxW && w.length > 1){
-        let k = w.length; while(k > 1 && ctx.measureText(w.slice(0,k)).width > maxW) k--;
-        if(line){ out.push(line); line=""; }
-        out.push(w.slice(0,k)); w = w.slice(k);
-      }
-      const test = line ? line+" "+w : w;
-      if(ctx.measureText(test).width <= maxW) line = test; else { if(line) out.push(line); line = w; }
-    }
-    if(line) out.push(line);
-  }
-  return out.length ? out : [""];
-}
-function fit(ctx, text, maxW, maxH, start, min, weight, family, lh){
-  for(let s = start; s >= min; s -= 2){
-    ctx.font = `${weight} ${s}px ${family}`;
-    const lines = wrap(ctx, text, maxW);
-    if(lines.length * s * lh <= maxH) return {s, lines};
-  }
-  ctx.font = `${weight} ${min}px ${family}`;
-  let lines = wrap(ctx, text, maxW);
-  const maxL = Math.max(1, Math.floor(maxH/(min*lh)));
-  if(lines.length > maxL){ lines = lines.slice(0, maxL); lines[maxL-1] = lines[maxL-1].replace(/\s*\S*$/,"") + "…"; }
-  return {s:min, lines};
-}
-function cached(seg, key, fn){ seg._c = seg._c || {}; return seg._c[key] || (seg._c[key] = fn()); }
-function rrect(ctx,x,y,w,h,r){ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h); }
-function spaced(ctx, px){ if("letterSpacing" in ctx) ctx.letterSpacing = px + "px"; }
-
-/* ---------- the video plan ---------- */
-function mediaSeg(slot){
-  const m = state.media[slot]; if(!m || !m.ready || m.err) return null;
-  const def = SLOTS[slot];
-  const caption = slot === "car" ? (nm() ? possessive(nm()) + " egg crash car" : "") : def.caption;
-  return {type:m.kind, slot, item:m, chip:def.chip, caption, dur: m.kind === "image" ? PHOTO_SECS : clamp(m.len, 1.8, MAX_CLIP)};
-}
-function textSeg(label, prompt, text){ text = text.trim(); if(!text) return null;
-  return {type:"question", label, q:prompt, a:text, dur:clamp(3.5 + words(text)*0.32, 4.5, 11)}; }
-function buildPlan(){
-  const list = [
-    {type:"title", dur:4},
-    mediaSeg("car"),
-    textSeg("ASK", "The problem I was trying to solve", state.ask),
-    mediaSeg("design"),
-    mediaSeg("first"),
-    mediaSeg("crash"),
-    textSeg("EXPLORE AND EXPLAIN", "What I observed in my crash test", state.observe),
-    mediaSeg("final"),
-    state.survived ? {type:"result", dur:4} : null,
-    textSeg("IMPROVE", "If I had one more day, I would…", state.improve),
-    {type:"end", dur:3.5}
-  ];
-  const segs = list.filter(Boolean);
-  let t = 0;
-  segs.forEach((g,i) => { g.idx = i; g.start = t; g.end = t + g.dur; t = g.end - T_LEN; });
-  return {segs, total: segs[segs.length-1].end, T: T_LEN};
-}
-function transKind(j){ const t = state.s.transition; return t === "mixed" ? TRANS_CYCLE[(j-1) % TRANS_CYCLE.length] : t; }
-
-/* ---------- drawing ---------- */
-function theme(){ return THEMES[state.s.theme]; }
-function cardBg(ctx, W, H, u, local){
-  const th = theme();
-  const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,th.bg1); g.addColorStop(1,th.bg2);
-  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-  ctx.save(); ctx.globalAlpha *= .16; ctx.fillStyle = th.accent;
-  ctx.beginPath(); ctx.arc(W*(.86 - .012*local), H*(.18 + .008*local), Math.max(W,H)*.3, 0, Math.PI*2); ctx.fill(); ctx.restore();
-  ctx.save(); ctx.globalAlpha *= .14; ctx.fillStyle = th.fg;   // film-strip sprocket holes
-  const sw = 20*u, sh = 13*u, gap = 36*u, off = (local*22*u) % gap;
-  for(let x = -gap + off; x < W + gap; x += gap){ rrect(ctx,x,12*u,sw,sh,3*u); ctx.fill(); rrect(ctx,x,H-12*u-sh,sw,sh,3*u); ctx.fill(); }
-  ctx.restore();
-}
-function inAnim(ctx, local, delay, u){ const a = easeOut(clamp((local-delay)/.7)); ctx.globalAlpha *= a; ctx.translate(0, (1-a)*26*u); }
-
-function drawTitle(ctx, seg, local, W, H, u, preview){
-  const th = theme(); cardBg(ctx,W,H,u,local);
-  const pad = 100*u, maxW = W - 2*pad;
-  const n = nm() || (preview ? "Your Name" : "");
-  const title = n ? possessive(n) + " Egg Crash Car" : "My Egg Crash Car";
-  const T = cached(seg, "t"+title, () => fit(ctx, title, maxW, H*.45, 96*u, 44*u, 800, DISPLAY, 1.05));
-  const tH = T.lines.length*T.s*1.05;
-  let y = (H - (50*u + tH + 70*u))/2;
-  ctx.textBaseline = "top"; ctx.textAlign = "left";
-  ctx.save(); inAnim(ctx,local,0,u); ctx.fillStyle = th.accent; ctx.font = `700 ${24*u}px ${BODY}`; spaced(ctx, 3*u);
-  ctx.fillText("ENGINEERING DESIGN PROJECT", pad, y, maxW); ctx.restore(); y += 50*u;
-  ctx.save(); inAnim(ctx,local,.15,u); ctx.fillStyle = th.fg; ctx.font = `800 ${T.s}px ${DISPLAY}`;
-  T.lines.forEach((l,i) => ctx.fillText(l, pad, y + i*T.s*1.05)); ctx.restore(); y += tH + 26*u;
-  ctx.save(); ctx.fillStyle = th.accent; rrect(ctx, pad, y, 150*u*easeOut(clamp((local-.4)/.8)), 9*u, 4.5*u); ctx.fill(); ctx.restore();
-  // a small egg mark
-  ctx.save(); ctx.globalAlpha *= easeOut(clamp((local-.6)/.6)); ctx.fillStyle = th.fg;
-  ctx.beginPath(); ctx.ellipse(pad + 150*u + 34*u, y + 4*u, 13*u, 17*u, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
-}
-function drawText(ctx, seg, local, W, H, u){
-  const th = theme(); cardBg(ctx,W,H,u,local);
-  const pad = 100*u, maxW = W - 2*pad;
-  const Q = cached(seg, "q", () => fit(ctx, seg.q, maxW, H*.18, 36*u, 24*u, 600, BODY, 1.25));
-  const qH = Q.lines.length*Q.s*1.25, labH = 24*u + 18*u, gap = 30*u;
-  const A = cached(seg, "a", () => fit(ctx, seg.a, maxW, H - 2*pad - qH - labH - gap - 20*u, 60*u, 26*u, 700, DISPLAY, 1.18));
-  const aH = A.lines.length*A.s*1.18;
-  let y = (H - (labH + qH + gap + aH))/2;
-  ctx.textBaseline = "top"; ctx.textAlign = "left";
-  ctx.save(); inAnim(ctx,local,0,u); ctx.font = `800 ${24*u}px ${BODY}`; spaced(ctx, 3*u);
-  const lw = ctx.measureText(seg.label).width;
-  ctx.fillStyle = th.accent; rrect(ctx, pad - 12*u, y - 7*u, lw + 24*u, 38*u, 8*u); ctx.fill();
-  ctx.fillStyle = th.bg1; ctx.fillText(seg.label, pad, y); ctx.restore(); y += labH + 8*u;
-  ctx.save(); inAnim(ctx,local,.1,u); ctx.fillStyle = th.fg; ctx.globalAlpha *= .8; ctx.font = `600 ${Q.s}px ${BODY}`;
-  Q.lines.forEach((l,i) => ctx.fillText(l, pad, y + i*Q.s*1.25)); ctx.restore(); y += qH + gap - 8*u;
-  ctx.save(); inAnim(ctx,local,.55,u); ctx.fillStyle = th.fg; ctx.font = `700 ${A.s}px ${DISPLAY}`;
-  A.lines.forEach((l,i) => ctx.fillText(l, pad, y + i*A.s*1.18)); ctx.restore();
-}
-function drawEgg(ctx, cx, cy, r, cracked, fg, accent, p){
-  ctx.save();
-  ctx.fillStyle = fg; ctx.beginPath(); ctx.ellipse(cx, cy, r*.78, r, 0, 0, Math.PI*2); ctx.fill();
-  if(cracked){
-    ctx.strokeStyle = accent; ctx.lineWidth = r*.09; ctx.lineJoin = "round"; ctx.lineCap = "round";
-    const pts = [[-.78,-.05],[-.45,.12],[-.25,-.12],[0,.1],[.22,-.14],[.45,.1],[.78,-.05]];
-    const n = Math.max(1, Math.round(p*(pts.length-1)));
-    ctx.beginPath(); pts.slice(0,n+1).forEach(([x,y],i) => i ? ctx.lineTo(cx+x*r, cy+y*r) : ctx.moveTo(cx+x*r, cy+y*r)); ctx.stroke();
-  } else {
-    ctx.strokeStyle = accent; ctx.lineWidth = r*.12; ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.beginPath(); ctx.moveTo(cx-r*.32, cy+r*.02); ctx.lineTo(cx-r*.08, cy+r*.28*clamp(p*2));
-    if(p > .5) ctx.lineTo(cx-r*.08 + r*.42*clamp((p-.5)*2), cy+r*.28 - r*.56*clamp((p-.5)*2));
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-function drawResult(ctx, seg, local, W, H, u){
-  const th = theme(); cardBg(ctx,W,H,u,local);
-  const yes = state.survived === "yes", pad = 100*u;
-  ctx.textBaseline = "top"; ctx.textAlign = "left";
-  let y = H*.5 - 150*u;
-  ctx.save(); inAnim(ctx,local,0,u); ctx.fillStyle = th.fg; ctx.globalAlpha *= .8; ctx.font = `600 ${34*u}px ${BODY}`;
-  ctx.fillText("Did my egg survive the collision?", pad, y, W - 2*pad); ctx.restore(); y += 70*u;
-  const a = easeOut(clamp((local-.6)/.5)), k = .7 + .3*a;
-  ctx.save(); ctx.globalAlpha *= a; ctx.translate(pad, y); ctx.scale(k,k);
-  ctx.fillStyle = th.accent; ctx.font = `800 ${150*u}px ${DISPLAY}`; ctx.fillText(yes ? "YES!" : "NO", 0, 0); ctx.restore();
-  ctx.save(); inAnim(ctx,local,1,u); ctx.fillStyle = th.fg; ctx.font = `600 ${32*u}px ${BODY}`;
-  ctx.fillText(yes ? "The egg made it through in one piece." : "The egg cracked in the collision.", pad, y + 175*u, W - 2*pad); ctx.restore();
-  const r = 105*u;
-  if(W - pad - r*1.2 > pad + 420*u) drawEgg(ctx, W - pad - r, H*.5, r, !yes, th.fg, th.accent, easeOut(clamp((local-.9)/.8)));
-}
-function drawEnd(ctx, seg, local, W, H, u, preview){
-  const th = theme(); cardBg(ctx,W,H,u,local);
-  const n = nm() || (preview ? "Your Name" : "");
-  ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  const cx = W/2, cy = H/2;
-  if(n){
-    ctx.save(); inAnim(ctx,local,0,u); ctx.fillStyle = th.accent; ctx.font = `700 ${24*u}px ${BODY}`; spaced(ctx, 3*u); ctx.fillText("MADE BY", cx, cy - 76*u); ctx.restore();
-    ctx.save(); inAnim(ctx,local,.15,u); ctx.fillStyle = th.fg; ctx.font = `800 ${88*u}px ${DISPLAY}`; ctx.fillText(n, cx, cy, W - 200*u); ctx.restore();
-    ctx.save(); inAnim(ctx,local,.4,u); ctx.fillStyle = th.fg; ctx.globalAlpha *= .8; ctx.font = `500 ${28*u}px ${BODY}`; ctx.fillText("Egg Crash Car Project", cx, cy + 74*u); ctx.restore();
-  } else {
-    ctx.save(); inAnim(ctx,local,0,u); ctx.fillStyle = th.fg; ctx.font = `800 ${80*u}px ${DISPLAY}`; ctx.fillText("The End", cx, cy); ctx.restore();
-  }
-  ctx.save(); ctx.globalAlpha *= .6 * easeOut(clamp((local-.7)/.7)); ctx.fillStyle = th.fg; ctx.font = `500 ${20*u}px ${BODY}`;
-  ctx.fillText(new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"}), cx, H - 70*u); ctx.restore();
-}
-function drawMedia(ctx, seg, local, W, H, u){
-  const it = seg.item, el = it.el, th = theme();
-  if(it.kind === "video" && it.tiny){ try{ it.tiny.getContext("2d").drawImage(el,0,0,it.tiny.width,it.tiny.height); }catch(e){} }
-  ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
-  if(it.tiny){ // soft blurred backdrop: a tiny copy scaled up
-    const tw = it.tiny.width, tH = it.tiny.height, s = Math.max(W/tw, H/tH)*1.1;
-    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(it.tiny, (W - tw*s)/2, (H - tH*s)/2, tw*s, tH*s);
-    ctx.fillStyle = "rgba(0,0,0,.42)"; ctx.fillRect(0,0,W,H); ctx.restore();
-  }
-  const s0 = Math.min(W/it.w, H/it.h);
-  let k = 1, dx = 0;
-  if(it.kind === "image"){ const p = clamp(local/seg.dur), dir = seg.idx % 2; k = 1 + .07*(dir ? p : 1-p); dx = (dir ? -1 : 1)*(p-.5)*14*u; }
-  const w = it.w*s0*k, h = it.h*s0*k;
-  try{ ctx.drawImage(el, (W-w)/2 + dx, (H-h)/2, w, h); }catch(e){}
-  // stage chip, top left
-  if(seg.chip){
-    ctx.save(); ctx.globalAlpha *= easeOut(clamp((local-.15)/.5));
-    ctx.font = `800 ${22*u}px ${BODY}`; spaced(ctx, 2.5*u); ctx.textBaseline = "middle"; ctx.textAlign = "left";
-    const cw = ctx.measureText(seg.chip).width + 30*u;
-    ctx.fillStyle = th.accent; rrect(ctx, 36*u, 34*u, cw, 44*u, 9*u); ctx.fill();
-    ctx.fillStyle = th.bg1; ctx.fillText(seg.chip, 51*u, 56*u + 1*u); ctx.restore();
-  }
-  const cap = (seg.caption||"").trim();
-  if(cap){
-    const pad = 40*u, maxW = W - 2*pad - 40*u;
-    ctx.save(); ctx.globalAlpha *= easeOut(clamp((local-.35)/.6));
-    ctx.font = `600 ${32*u}px ${BODY}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    const C = cached(seg, "c"+cap, () => { let l = wrap(ctx, cap, maxW); if(l.length>2){ l = l.slice(0,2); l[1] = l[1].replace(/\s*\S*$/,"")+"…"; } return {lines:l}; });
-    const lh = 42*u, bw = Math.max(...C.lines.map(l => ctx.measureText(l).width)) + 44*u, bh = C.lines.length*lh + 20*u;
-    const by = H - pad - bh;
-    ctx.fillStyle = "rgba(8,10,18,.72)"; rrect(ctx, (W-bw)/2, by, bw, bh, 12*u); ctx.fill();
-    ctx.fillStyle = "#fff"; C.lines.forEach((l,i) => ctx.fillText(l, W/2, by + 10*u + lh*(i+.5)));
-    ctx.restore();
-  }
-}
-function drawSeg(ctx, seg, local, preview){
-  const W = ctx.canvas.width, H = ctx.canvas.height, u = Math.min(W,H)/720;
-  ctx.save();
-  if(seg.type === "title") drawTitle(ctx,seg,local,W,H,u,preview);
-  else if(seg.type === "question") drawText(ctx,seg,local,W,H,u);
-  else if(seg.type === "result") drawResult(ctx,seg,local,W,H,u);
-  else if(seg.type === "end") drawEnd(ctx,seg,local,W,H,u,preview);
-  else drawMedia(ctx,seg,local,W,H,u);
-  ctx.restore();
-}
-function scaled(ctx, k, fn){ const W = ctx.canvas.width, H = ctx.canvas.height; ctx.save(); ctx.translate(W/2,H/2); ctx.scale(k,k); ctx.translate(-W/2,-H/2); fn(); ctx.restore(); }
-function drawFrame(ctx, pl, t, preview){
-  const W = ctx.canvas.width, H = ctx.canvas.height, segs = pl.segs;
-  let j = 0; for(let i = 0; i < segs.length; i++) if(segs[i].start <= t) j = i;
-  const cur = segs[j], prev = j > 0 ? segs[j-1] : null;
-  ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.fillRect(0,0,W,H);
-  if(!(prev && t < prev.end)){ drawSeg(ctx, cur, t-cur.start, preview); return; }
-  const p = easeIO(clamp((t-cur.start)/pl.T)), la = t-prev.start, lb = t-cur.start;
-  switch(transKind(j)){
-    case "slide":
-      ctx.save(); ctx.translate(-p*W,0); drawSeg(ctx,prev,la,preview); ctx.restore();
-      ctx.save(); ctx.translate((1-p)*W,0); drawSeg(ctx,cur,lb,preview); ctx.restore(); break;
-    case "zoom":
-      scaled(ctx, 1+.18*p, () => drawSeg(ctx,prev,la,preview));
-      ctx.save(); ctx.globalAlpha = p; scaled(ctx, 1.18-.18*p, () => drawSeg(ctx,cur,lb,preview)); ctx.restore(); break;
-    case "wipe":
-      drawSeg(ctx,prev,la,preview);
-      ctx.save(); ctx.beginPath(); ctx.rect(0,0,p*W,H); ctx.clip(); drawSeg(ctx,cur,lb,preview); ctx.restore();
-      ctx.save(); ctx.fillStyle = theme().accent; ctx.fillRect(p*W - 3, 0, 6, H); ctx.restore(); break;
-    case "fadeblack":
-      ctx.save(); if(p < .5){ ctx.globalAlpha = 1-2*p; drawSeg(ctx,prev,la,preview); } else { ctx.globalAlpha = 2*p-1; drawSeg(ctx,cur,lb,preview); } ctx.restore(); break;
-    default:
-      drawSeg(ctx,prev,la,preview); ctx.save(); ctx.globalAlpha = p; drawSeg(ctx,cur,lb,preview); ctx.restore();
-  }
+function parseGviz(text) {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  return JSON.parse(text.slice(start, end + 1));
 }
 
-/* ---------- media slots ---------- */
-function makeTiny(src, w, h){ const c = document.createElement("canvas"); c.width = 48; c.height = Math.max(1, Math.round(48*h/w)); try{ c.getContext("2d").drawImage(src,0,0,c.width,c.height); }catch(e){} return c; }
-function kindOf(f){
-  if(f.type.startsWith("video/")) return "video";
-  if(f.type.startsWith("image/")) return "image";
-  if(/\.(mov|mp4|m4v|webm|3gp)$/i.test(f.name)) return "video";
-  if(/\.(jpe?g|png|gif|webp|heic|heif|avif)$/i.test(f.name)) return "image";
-  return null;
-}
-function setFile(slot, f, trim, fromStore){
-  const want = SLOTS[slot].kind, got = kindOf(f);
-  if(got !== want){ slotMsg[slot] = want === "image" ? "That file isn't a picture. Choose a photo." : "That file isn't a video. Choose a video."; renderSlot(slot); return; }
-  slotMsg[slot] = "";
-  clearSlot(slot, true);
-  const it = {slot, kind:want, name:f.name || (want === "image" ? "Photo" : "Video"), url:URL.createObjectURL(f), ready:false, err:null, start:0, len:0};
-  if(trim){ it.start = +trim.start || 0; it.len = +trim.len || 0; }
-  state.media[slot] = it;
-  if(!fromStore){ storeFile(slot, f); }
-  loadItem(it); renderSlot(slot); refresh();
-}
-function clearSlot(slot, keepStore){
-  const it = state.media[slot]; if(!it) return;
-  if(it.kind === "video" && it.el){ it.el.pause(); it.el.removeAttribute("src"); it.el.load(); it.el.remove(); if(it.gain){ try{ it.gain.disconnect(); }catch(e){} } }
-  URL.revokeObjectURL(it.url); state.media[slot] = null;
-  if(!keepStore) dropFile(slot);
-}
-function drawThumbs(it){
-  const v = it.el; if(!it.w) return;
-  if(!it.thumbCanvas){ it.thumbCanvas = document.createElement("canvas"); }
-  const c = it.thumbCanvas; c.width = 400; c.height = Math.round(400*it.h/it.w);
-  try{ c.getContext("2d").drawImage(v,0,0,c.width,c.height); it.thumb = c.toDataURL("image/jpeg",.6); }catch(e){}
-  it.tiny = makeTiny(v, it.w, it.h);
-}
-function loadItem(it){
-  if(it.kind === "image"){
-    const img = new Image();
-    img.onload = () => { if(state.media[it.slot] !== it) return; it.el = img; it.w = img.naturalWidth; it.h = img.naturalHeight; it.tiny = makeTiny(img,it.w,it.h); it.ready = true; renderSlot(it.slot); refresh(); };
-    img.onerror = () => { if(state.media[it.slot] !== it) return; it.err = /\.(heic|heif)$/i.test(it.name) ? "This HEIC photo can't be opened here. Try taking the picture again, or save it as a JPG." : "This picture couldn't be opened. Try a different photo."; renderSlot(it.slot); refresh(); };
-    img.src = it.url;
-    return;
-  }
-  const v = document.createElement("video");
-  v.preload = "auto"; v.playsInline = true; v.setAttribute("playsinline",""); v.muted = true; v.src = it.url;
-  $("#holder").appendChild(v); it.el = v;
-  const fail = msg => { if(state.media[it.slot] !== it || it.ready) return; it.err = msg; renderSlot(it.slot); refresh(); };
-  v.addEventListener("loadedmetadata", () => {
-    it.duration = isFinite(v.duration) ? v.duration : MAX_CLIP; it.w = v.videoWidth; it.h = v.videoHeight;
-    if(!it.w || !it.h) return fail("This file has no picture (sound only).");
-    it.start = clamp(it.start, 0, Math.max(0, it.duration - 1));
-    const rest = it.duration - it.start;
-    it.len = it.len ? clamp(it.len, Math.min(2, rest), Math.min(MAX_CLIP, rest)) : Math.min(MAX_CLIP, rest);
-    v.currentTime = it.start + .05;
-  });
-  v.addEventListener("seeked", () => {
-    if(building || state.media[it.slot] !== it) return;
-    drawThumbs(it);
-    if(!it.ready){ it.ready = true; renderSlot(it.slot); refresh(); }
-    else { const c = document.querySelector(`[data-slot="${it.slot}"] .thumb canvas`); if(c !== it.thumbCanvas) renderSlot(it.slot); refresh(); }
-  });
-  v.addEventListener("error", () => fail("This video can't be played here. Try recording it again with the Camera app."));
-  try{ v.load(); }catch(e){}
-  // iPad Safari sometimes waits to load a video until it has been played once
-  setTimeout(() => { if(!it.ready && !it.err && state.media[it.slot] === it){ v.play().then(() => { v.pause(); v.currentTime = it.start + .05; }).catch(()=>{}); } }, 2500);
-}
-const slotMsg = {};
-function renderSlot(slot){
-  const box = document.querySelector(`[data-slot="${slot}"]`), it = state.media[slot], def = SLOTS[slot];
-  const act = document.activeElement, actId = act && act.id;
-  box.textContent = "";
-  const accept = def.kind === "image" ? "image/*" : "video/*";
-  const mkInput = () => { const i = document.createElement("input"); i.type = "file"; i.accept = accept; i.id = "f-"+slot;
-    i.onchange = () => { if(i.files[0]){ markReal(); setFile(slot, i.files[0]); } i.value = ""; }; return i; };
-  if(!it){
-    const l = document.createElement("label"); l.className = "drop";
-    const s = document.createElement("strong"); s.textContent = def.kind === "image" ? "Add a photo" : "Add a video";
-    const h = document.createElement("span"); h.className = "hint"; h.textContent = def.kind === "image" ? "Tap to take a picture or choose one from Photos" : "Tap to record a video or choose one from Photos";
-    l.append(mkInput(), s, h);
-    ["dragenter","dragover"].forEach(ev => l.addEventListener(ev, e => { e.preventDefault(); l.classList.add("over"); }));
-    ["dragleave","drop"].forEach(ev => l.addEventListener(ev, e => { e.preventDefault(); l.classList.remove("over"); }));
-    l.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if(f && !building){ markReal(); setFile(slot, f); } });
-    box.append(l);
-  } else {
-    const w = document.createElement("div"); w.className = "filled";
-    const th = document.createElement("div"); th.className = "thumb";
-    if(it.kind === "image" && !it.err){ const im = document.createElement("img"); im.src = it.url; im.alt = "Your photo"; th.append(im); }
-    else if(it.thumbCanvas){ th.append(it.thumbCanvas); }
-    if(!it.ready && !it.err){ const ld = document.createElement("div"); ld.className = "loading"; ld.textContent = "Loading…"; th.append(ld); }
-    if(it.kind === "video" && it.ready){ const b = document.createElement("span"); b.className = "badge"; b.textContent = "VIDEO " + fmt(it.duration); th.append(b); }
-    const meta = document.createElement("div"); meta.className = "fmeta";
-    if(it.err){ const e = document.createElement("div"); e.className = "err"; e.textContent = it.err; meta.append(e); }
-    if(it.kind === "video" && it.ready){
-      const tr = document.createElement("div"); tr.className = "trim";
-      const maxStart = Math.max(0, it.duration - 1);
-      const mkRange = (id, label, min, max, val, on) => {
-        const l = document.createElement("label"); const top = document.createElement("span"); const o = document.createElement("output");
-        top.append(document.createTextNode(label + " "), o);
-        const r = document.createElement("input"); r.type = "range"; r.id = id; r.min = min; r.max = max; r.step = .1; r.value = val;
-        o.textContent = fmt1(val) ; r.oninput = () => { on(+r.value, o); }; l.append(top, r); return l;
-      };
-      if(maxStart > .5) tr.append(mkRange("s-"+slot, "Start at", 0, maxStart.toFixed(1), it.start, (v,o) => {
-        it.start = v; o.textContent = fmt1(v);
-        const rest = it.duration - v; it.len = clamp(it.len, Math.min(2, rest), Math.min(MAX_CLIP, rest));
-        const lr = document.getElementById("l-"+slot); if(lr){ lr.max = Math.min(MAX_CLIP, rest).toFixed(1); lr.value = it.len; lr.previousSibling.lastChild.textContent = fmt1(it.len) + " seconds"; }
-        it.el.currentTime = v + .05; saveDraft();
-      }));
-      const rest = it.duration - it.start;
-      if(rest > 2.2) tr.append(mkRange("l-"+slot, "Use", Math.min(2, rest), Math.min(MAX_CLIP, rest).toFixed(1), it.len, (v,o) => { it.len = v; o.textContent = fmt1(v) + " seconds"; refresh(); }));
-      const lo = tr.querySelector("#l-"+slot); if(lo) lo.previousSibling.lastChild.textContent = fmt1(it.len) + " seconds";
-      if(it.duration > MAX_CLIP){ const n = document.createElement("div"); n.className = "hint"; n.textContent = `Up to ${MAX_CLIP} seconds of each video can be used. Slide "Start at" to the crash.`; tr.append(n); }
-      meta.append(tr);
-    }
-    const btns = document.createElement("div"); btns.className = "fbtns";
-    const rep = document.createElement("label"); rep.className = "btn"; rep.append(mkInput(), document.createTextNode(def.kind === "image" ? "Change photo" : "Change video"));
-    const rm = document.createElement("button"); rm.type = "button"; rm.className = "danger"; rm.textContent = "Remove";
-    rm.onclick = () => { clearSlot(slot); renderSlot(slot); refresh(); };
-    btns.append(rep, rm); meta.append(btns);
-    w.append(th, meta); box.append(w);
-  }
-  if(slotMsg[slot]){ const e = document.createElement("div"); e.className = "err"; e.textContent = slotMsg[slot]; box.append(e); }
-  if(actId && actId !== (act && act.id)){}
-  if(actId){ const el = document.getElementById(actId); if(el && el !== act) el.focus(); }
+async function loadViaFetch() {
+  const res = await fetch(baseUrl + "&tqx=out:json&_=" + Date.now());
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return parseGviz(await res.text());
 }
 
-/* ---------- UI ---------- */
-function segColor(t){ return {title:"var(--seg-title)", question:"var(--seg-q)", result:"var(--seg-q)", image:"var(--seg-img)", video:"var(--seg-vid)", end:"var(--seg-end)"}[t]; }
-function segName(g){ return g.type === "title" ? "Title" : g.type === "end" ? "End" : g.type === "result" ? "Egg" : g.type === "question" ? g.label.split(" ")[0].replace("EXPLORE","EXPLAIN") : SLOTS[g.slot].strip; }
-function renderStrip(){
-  const box = $("#strip"); box.textContent = "";
-  plan.segs.forEach(g => {
-    const b = document.createElement("button"); b.type = "button";
-    b.style.flexGrow = g.dur; b.style.backgroundColor = segColor(g.type);
-    const img = g.type === "image" ? g.item.url : g.type === "video" ? g.item.thumb : null;
-    if(img) b.style.backgroundImage = `linear-gradient(transparent 40%, rgba(0,0,0,.6)), url("${img}")`;
-    const sp = document.createElement("span"); sp.textContent = segName(g); b.append(sp);
-    b.title = segName(g) + " · " + g.dur.toFixed(1) + " seconds"; b.setAttribute("aria-label", b.title);
-    if(previewT >= g.start + plan.T*.5 && previewT < g.end - plan.T*.5) b.classList.add("sel");
-    b.onclick = () => { previewT = g.type === "video" ? g.start + plan.T + .05 : g.start + Math.min(g.dur*.65, g.dur - plan.T - .05); renderStrip(); drawPreview(); };
-    box.append(b);
-  });
-  $("#runtime").textContent = fmt(plan.total);
-}
-let rafPending = false;
-function drawPreview(){
-  if(building || rafPending) return; rafPending = true;
-  requestAnimationFrame(() => { rafPending = false; if(building) return;
-    drawFrame($("#cv").getContext("2d"), plan, Math.min(previewT, plan.total - .01), true);
+function loadViaJsonp() {
+  return new Promise((resolve, reject) => {
+    const cb = "eggCb" + Date.now();
+    const s = document.createElement("script");
+    const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 15000);
+    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
+    window[cb] = data => { cleanup(); resolve(data); };
+    s.onerror = () => { cleanup(); reject(new Error("script error")); };
+    s.src = baseUrl + "&tqx=responseHandler:" + cb + "&_=" + Date.now();
+    document.head.appendChild(s);
   });
 }
-function stepStatus(){
-  const ok = s => { const m = state.media[s]; return !!(m && m.ready && !m.err); };
-  return [
-    !!nm() && ok("car"), !!state.ask.trim(), ok("design"), ok("first"),
-    ok("crash") && !!state.observe.trim(), ok("final") && !!state.survived, !!state.improve.trim()
-  ];
-}
-function refresh(){
-  plan = buildPlan();
-  if(previewT > plan.total) previewT = 1.6;
-  renderStrip(); drawPreview(); saveDraft();
-  const st = stepStatus();
-  st.forEach((d,i) => document.getElementById("st"+(i+1)).classList.toggle("done", d));
-  const miss = st.map((d,i) => d ? null : i+1).filter(Boolean);
-  const mEl = $("#missing");
-  mEl.hidden = !miss.length;
-  mEl.textContent = miss.length === 7 ? "Start with step 1." : miss.length ? `Not finished yet: step${miss.length>1?"s":""} ${miss.join(", ")}. Anything missing will be left out of the video.` : "";
-  const loading = Object.values(state.media).some(m => m && !m.ready && !m.err);
-  $("#buildBtn").disabled = !!building || loading;
-  $("#buildBtn").textContent = loading ? "Loading files…" : result ? "Make it again" : "Make my video";
-}
-function setMsg(t, cls){ const m = $("#msg"); m.textContent = t; m.className = "msg" + (cls ? " "+cls : ""); }
 
-/* ---------- making the video ---------- */
-function pickMime(){
-  if(!window.MediaRecorder) return null;
-  const list = ['video/mp4;codecs="avc1.42E01F,mp4a.40.2"','video/mp4;codecs=avc1,mp4a','video/mp4;codecs=avc1,opus','video/mp4;codecs=avc1','video/mp4;codecs=vp9,opus','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-  for(const m of list){ try{ if(MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
-  return "";
-}
-function seekTo(v, t){ return new Promise(r => { const done = () => { v.removeEventListener("seeked", done); r(); }; v.addEventListener("seeked", done); v.currentTime = t; setTimeout(done, 2000); }); }
-
-// Try each format in order (MP4 first) and keep the first one the browser actually accepts.
-function makeRecorder(stream){
-  const list = ['video/mp4;codecs="avc1.42E01F,mp4a.40.2"','video/mp4;codecs=avc1,mp4a','video/mp4;codecs=avc1,opus','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
-  const errors = [];
-  for(const m of list){
-    let sup = false; try{ sup = MediaRecorder.isTypeSupported(m); }catch(e){}
-    if(!sup && !/^video\/mp4$/.test(m)) continue;
-    for(const o of [{mimeType:m, videoBitsPerSecond:6e6, audioBitsPerSecond:128000}, {mimeType:m}]){
-      try{ return {rec:new MediaRecorder(stream, o), mime:m, errors}; }catch(e){ errors.push(m + " (" + (e && e.name || "error") + ")"); }
-    }
-  }
-  return {rec:new MediaRecorder(stream), mime:"", errors};
+async function loadSheet() {
+  let data;
+  try { data = await loadViaFetch(); }
+  catch (e) { data = await loadViaJsonp(); }
+  if (data.status === "error") throw new Error((data.errors && data.errors[0] && data.errors[0].detailed_message) || "Sheet error");
+  const headers = data.table.cols.map(c => (c.label || "").trim());
+  const rows = data.table.rows.map(r => (r.c || []).map(cell => {
+    if (!cell) return "";
+    if (cell.f != null) return String(cell.f);
+    return cell.v == null ? "" : String(cell.v);
+  }));
+  return { headers, rows };
 }
 
-async function build(){
-  if(!nm()){ setMsg("Type your first name in step 1 first.", "bad"); $("#name").focus(); return; }
-  const pl = buildPlan();
-  const mime = pickMime();
-  if(mime === null || !HTMLCanvasElement.prototype.captureStream){ setMsg("This browser can't make videos. On iPad, update to the newest iPadOS and use Safari.", "bad"); return; }
-  const vsegs = pl.segs.filter(g => g.type === "video");
-  // Unlock audio and video playback right away, while this still counts as the tap (iPad requires it).
-  let dest = null;
-  try{
-    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-    ac.resume();
-    dest = ac.createMediaStreamDestination();
-    for(const g of vsegs){ const it = g.item;
-      if(!it.srcNode){ it.srcNode = ac.createMediaElementSource(it.el); it.gain = ac.createGain(); it.srcNode.connect(it.gain); }
-      it.gain.gain.value = 0; it.gain.connect(dest);
-    }
-  }catch(e){ dest = null; }
-  for(const g of vsegs){ const v = g.item.el; v.muted = !dest || !state.s.keepAudio; const p = v.play(); if(p) p.then(() => v.pause()).catch(()=>{}); }
+/* =========================================================
+   Turn form responses into one record per student.
+   The form has repeated sections (one per teacher), each starting
+   with a "Name" column, followed by group + the five step columns.
+   A student's step counts as done if ANY of their rows says Yes.
+   ========================================================= */
+function buildStudents({ headers, rows }) {
+  let teacherCol = -1, timeCol = -1;
+  const sections = [];
+  let current = null;
 
-  building = {cancel:false, hidden:false}; refresh();
-  $("#editor").disabled = true; $("#cancelBtn").hidden = false; $("#bar").hidden = false; $("#recTag").hidden = false;
-  setMsg("Getting ready…");
-  let wake = null; try{ wake = await navigator.wakeLock.request("screen"); }catch(e){}
-  try{ await Promise.all([document.fonts.load(`800 40px "Bricolage Grotesque"`), document.fonts.load(`700 40px "Bricolage Grotesque"`), document.fonts.load(`600 30px Figtree`), document.fonts.load(`800 20px Figtree`)]); }catch(e){}
-  for(const g of vsegs){ g.item.el.pause(); await seekTo(g.item.el, g.item.start); g.started = g.stopped = false; }
-  const cv = $("#cv"), ctx = cv.getContext("2d");
-
-  const stream = cv.captureStream(30);
-  if(dest) dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
-  const made = makeRecorder(stream), rec = made.rec;
-  const chunks = []; rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
-  const onVis = () => { if(document.hidden) building.hidden = true; };
-  document.addEventListener("visibilitychange", onVis);
-  const cleanup = () => {
-    document.removeEventListener("visibilitychange", onVis);
-    for(const g of vsegs){ const it = g.item; it.el.pause(); it.el.muted = true; if(it.gain){ try{ it.gain.disconnect(); }catch(e){} } }
-    stream.getTracks().forEach(t => t.stop());
-    if(wake){ try{ wake.release(); }catch(e){} }
-    $("#editor").disabled = false; $("#cancelBtn").hidden = true; $("#bar").hidden = true; $("#recTag").hidden = true;
-  };
-  const stopped = new Promise(r => rec.onstop = r);
-  drawFrame(ctx, pl, 0, false);
-  rec.start(1000);
-  setMsg("Making your video… keep this screen open until it's done.");
-  const t0 = performance.now();
-  await new Promise(resolve => {
-    const step = now => {
-      if(building.cancel) return resolve();
-      const t = (now - t0)/1000;
-      for(const g of vsegs){ const v = g.item.el;
-        if(t >= g.start && !g.started){ g.started = true; v.play().catch(() => { v.muted = true; v.play().catch(()=>{}); }); }
-        if(t >= g.end && !g.stopped){ g.stopped = true; v.pause(); }
-        if(g.item.gain) g.item.gain.gain.value = state.s.keepAudio ? clamp((t-g.start)/pl.T) * clamp((g.end-t)/pl.T) : 0;
-      }
-      drawFrame(ctx, pl, Math.min(t, pl.total - .001), false);
-      $("#barFill").style.width = (100*clamp(t/pl.total)) + "%";
-      $("#recTime").textContent = fmt(t) + " / " + fmt(pl.total);
-      if(t >= pl.total) return setTimeout(resolve, 150);
-      requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  });
-  rec.stop(); await stopped; cleanup();
-  const wasHidden = building.hidden, cancelled = building.cancel; building = null;
-  if(cancelled){ setMsg("Stopped. Nothing was saved."); refresh(); return; }
-  const head = new Uint8Array(await chunks[0].slice(0, 12).arrayBuffer());
-  const isMp4 = head[4] === 0x66 && head[5] === 0x74 && head[6] === 0x79 && head[7] === 0x70; // "ftyp"
-  const isWebm = head[0] === 0x1A && head[1] === 0x45 && head[2] === 0xDF && head[3] === 0xA3;
-  const type = isMp4 ? "video/mp4" : isWebm ? "video/webm" : (rec.mimeType || made.mime || "video/webm");
-  $("#diag").textContent = `Recording info: asked for ${made.mime || "browser default"}; browser reported ${rec.mimeType || "nothing"}; file is ${isMp4 ? "MP4" : isWebm ? "WebM" : "unknown"}.` + (made.errors.length ? " Refused: " + made.errors.join("; ") : "");
-  const blob = new Blob(chunks, {type});
-  if(result) URL.revokeObjectURL(result.url);
-  result = {blob, url:URL.createObjectURL(blob), ext: /mp4/.test(type) ? "mp4" : "webm"};
-  $("#out").src = result.url; $("#result").hidden = false; $("#saveMsg").textContent = "";
-  $("#outInfo").textContent = `${fmt(pl.total)} · ${(blob.size/1048576).toFixed(1)} MB · ${result.ext.toUpperCase()}` + (result.ext === "webm" ? " (this browser can only make WebM; on an iPad in Safari it saves as MP4)" : "");
-  setMsg(wasHidden ? "Done, but the screen was switched away during part of it, so some parts may look frozen. Watch it, and make it again if needed." : "Your video is ready! Watch it, then tap Save video.", wasHidden ? "bad" : "good");
-  refresh();
-  $("#result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"nearest"});
-}
-
-async function saveVideo(){
-  const m = $("#saveMsg"); m.className = "msg";
-  if(!result) return;
-  const slug = (nm() || "my").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "my";
-  if(!dl) return fallbackSave(`${slug}-egg-crash-car.${result.ext}`, m);
-  try{
-    await dl.save({filename: `${slug}-egg-crash-car.${result.ext}`, data: result.blob});
-    m.className = "msg good"; m.textContent = "Saved! On iPad, open the Files app and look in Downloads. From there you can share it or save it to Photos.";
-  }catch(e){
-    const c = e && e.code;
-    m.className = "msg bad";
-    m.textContent = c === "declined" ? "Save was canceled. Tap Save video to try again."
-      : c === "rate_limited" ? "A save window is already open. Finish that one, then try again."
-      : c === "too_large" ? "This video is too large to save here. Use shorter parts of your videos and try again."
-      : "Saving isn't available in this view. Open this page in Safari at claude.ai and try again.";
-  }
-}
-
-// Used when the page runs outside claude.ai (for example on GitHub Pages).
-async function fallbackSave(filename, m){
-  const file = new File([result.blob], filename, {type: result.blob.type || "video/mp4"});
-  try{
-    if(navigator.canShare && navigator.canShare({files:[file]})){
-      await navigator.share({files:[file]});
-      m.className = "msg good"; m.textContent = "Done! If you picked Save Video, it's in your Photos app.";
+  headers.forEach((h, i) => {
+    const lower = h.toLowerCase();
+    if (lower === "name" || lower === "student name" || lower === "your name") {
+      current = { name: i, group: -1, steps: {} };
+      sections.push(current);
       return;
     }
-  }catch(e){
-    if(e && e.name === "AbortError"){ m.className = "msg bad"; m.textContent = "Save was canceled. Tap Save video to try again."; return; }
-  }
-  try{
-    const a = document.createElement("a"); a.href = result.url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    m.className = "msg good"; m.textContent = "Saved! Look in your Downloads folder (on iPad: the Files app, then Downloads).";
-  }catch(e){
-    m.className = "msg bad"; m.textContent = "Saving didn't work in this browser. Try Safari or Chrome.";
-  }
+    if (!current) {
+      if (lower.includes("teacher")) teacherCol = i;
+      if (lower.includes("timestamp")) timeCol = i;
+      return;
+    }
+    if (lower.includes("group")) { current.group = i; return; }
+    STEPS.forEach(step => {
+      if (new RegExp("\\b" + step + "\\b").test(h) && current.steps[step] == null) current.steps[step] = i;
+    });
+  });
+
+  const isYes = v => /^\s*(y|yes|true|done|x|✓)\s*$/i.test(v || "");
+  const students = new Map();
+
+  rows.forEach(row => {
+    const teacher = teacherCol >= 0 ? (row[teacherCol] || "").trim() : "";
+    const time = timeCol >= 0 ? row[timeCol] : "";
+    sections.forEach(sec => {
+      const rawName = (row[sec.name] || "").trim().replace(/\s+/g, " ");
+      if (!rawName) return;
+      const key = teacher.toLowerCase() + "|" + rawName.toLowerCase();
+      if (!students.has(key)) {
+        students.set(key, { name: rawName, teacher, group: "", done: {}, last: "" });
+      }
+      const s = students.get(key);
+      const grp = sec.group >= 0 ? (row[sec.group] || "").trim() : "";
+      if (grp) s.group = grp.replace(/\.0$/, "");
+      STEPS.forEach(step => {
+        const col = sec.steps[step];
+        if (col != null && isYes(row[col])) s.done[step] = true;
+      });
+      if (time) s.last = time;
+    });
+  });
+
+  return [...students.values()].map(s => {
+    const doneCount = STEPS.filter(st => s.done[st]).length;
+    let furthest = -1;
+    STEPS.forEach((st, i) => { if (s.done[st]) furthest = i; });
+    return { ...s, doneCount, furthest };
+  });
 }
 
-/* ---------- example ---------- */
-function markReal(){ if(sample){ sample = false; $("#sampleNotice").hidden = true; saveDraft(); } }
-async function exampleImage(a, b, label, sub){
-  const c = document.createElement("canvas"); c.width = 1200; c.height = 800; const x = c.getContext("2d");
-  const g = x.createLinearGradient(0,0,1200,800); g.addColorStop(0,a); g.addColorStop(1,b); x.fillStyle = g; x.fillRect(0,0,1200,800);
-  x.fillStyle = "rgba(255,255,255,.9)"; x.fillRect(300,380,600,120); x.fillStyle = "rgba(20,26,46,.85)";
-  [[400,520],[800,520]].forEach(([cx,cy]) => { x.beginPath(); x.arc(cx,cy,70,0,Math.PI*2); x.fill(); });
-  x.fillStyle = "#fff"; x.beginPath(); x.ellipse(600,330,50,66,0,0,Math.PI*2); x.fill();
-  x.font = `800 64px ${DISPLAY}`; x.textAlign = "center"; x.fillText("EXAMPLE PHOTO", 600, 150); x.font = `600 40px ${BODY}`; x.fillText(sub, 600, 210);
-  const blob = await new Promise(r => c.toBlob(r, "image/jpeg", .9));
-  return new File([blob], label + ".jpg", {type:"image/jpeg"});
-}
-async function loadExample(){
-  Object.keys(state.media).forEach(s => { clearSlot(s); });
-  Object.assign(state, {name:"Jordan", survived:"yes",
-    ask:"Design a car that protects a raw egg when it rolls down a ramp and crashes into a wall.",
-    observe:"The car bounced backward and the egg slid forward into the front bumper. The straws bent but didn't break.",
-    improve:"Add a seat belt made of rubber bands and make the front bumper longer so it squishes more."});
-  sample = true;
-  setFile("car", await exampleImage("#2f7a4f","#9fd6a8","Finished car","Finished car"));
-  setFile("design", await exampleImage("#2b4fd8","#9fc4ff","Design","Design sketch"));
-  setFile("first", await exampleImage("#c4467a","#ffd0a8","First version","First version"));
-  syncInputs(); Object.keys(SLOTS).forEach(renderSlot); refresh(); $("#sampleNotice").hidden = false;
-}
-function clearAll(){
-  Object.assign(state, {name:"", ask:"", observe:"", survived:"", improve:""});
-  Object.keys(state.media).forEach(s => clearSlot(s));
-  sample = false; syncInputs(); Object.keys(SLOTS).forEach(renderSlot); refresh(); $("#sampleNotice").hidden = true;
+/* =========================================================
+   Rendering
+   ========================================================= */
+const board = document.getElementById("board");
+const searchEl = document.getElementById("search");
+const teacherEl = document.getElementById("teacherFilter");
+let allStudents = [];
+let previousPositions = new Map();
+
+function eggSvg(hatched) {
+  if (hatched) {
+    return `<svg viewBox="0 0 46 58" aria-hidden="true">
+      <circle cx="23" cy="24" r="14" fill="#ffd84a" stroke="#f4a300" stroke-width="2"/>
+      <path d="M19 9q4-6 6 0" stroke="#f4a300" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <circle cx="18" cy="22" r="2.4" fill="#3b2a1a"/><circle cx="28" cy="22" r="2.4" fill="#3b2a1a"/>
+      <path d="M21 27l2 3 2-3z" fill="#f47c20"/>
+      <path d="M5 34l6 4 6-5 6 5 6-5 6 5 6-4c0 12-8 21-18 21S5 46 5 34z" fill="#fff" stroke="#e9c98b" stroke-width="2.5" stroke-linejoin="round"/>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 46 58" aria-hidden="true">
+    <path d="M23 3C12 3 4 21 4 35c0 12 8 20 19 20s19-8 19-20C42 21 34 3 23 3z" fill="#fff" stroke="#e9c98b" stroke-width="2.5"/>
+    <ellipse cx="15" cy="20" rx="3" ry="6" fill="#fff6e0" transform="rotate(20 15 20)"/>
+    <circle cx="17" cy="32" r="2.4" fill="#3b2a1a"/><circle cx="29" cy="32" r="2.4" fill="#3b2a1a"/>
+    <path d="M19 39q4 3.5 8 0" stroke="#3b2a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>`;
 }
 
-/* ---------- wiring ---------- */
-function syncInputs(){
-  for(const k of ["name","ask","observe","improve"]) $("#"+k).value = state[k];
-  document.querySelectorAll('input[name=survived]').forEach(r => r.checked = r.value === state.survived);
-  document.querySelectorAll('input[name=theme]').forEach(r => r.checked = r.value === state.s.theme);
-  $("#transition").value = state.s.transition; $("#keepAudio").checked = state.s.keepAudio;
+function esc(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-async function restoreFiles(trims){
-  const db = await idb(); if(!db) return;
-  for(const slot of Object.keys(SLOTS)){
-    const rec = await idbDo("readonly", st => st.get(slot));
-    if(rec && rec.blob && !state.media[slot]){
-      const f = rec.blob instanceof File ? rec.blob : new File([rec.blob], rec.name || slot, {type: rec.type || rec.blob.type});
-      setFile(slot, f, trims[slot], true);
+
+function fillFilters() {
+  const keep = teacherEl.value;
+  const teachers = [...new Set(allStudents.map(s => s.teacher).filter(Boolean))].sort();
+  teacherEl.innerHTML = `<option value="">All teachers</option>` + teachers.map(t => `<option>${esc(t)}</option>`).join("");
+  if (teachers.includes(keep)) teacherEl.value = keep;
+  teacherEl.style.display = teachers.length > 1 ? "" : "none";
+}
+
+/* The five steps sit along the first 80% of each timeline; the last 20% is
+   room for the "Keep testing" sign after EXPLAIN. */
+const LINE_END = 80;
+const stepPos = i => (i / (STEPS.length - 1)) * LINE_END;
+/* The sign that appears on the line right after a student's furthest finished step */
+const NEXT_SIGNS = [
+  { icon: "✏️", text: "Design your car" },
+  { icon: "🔧", text: "Build your car" },
+  { icon: "🎥", text: "Upload a test video" },
+  { icon: "📝", text: "Describe your collision" },
+  { icon: "🔁", text: "Keep testing" },
+];
+const pctFor = s => stepPos(s.furthest < 0 ? 0 : s.furthest);
+const keyFor = s => s.teacher + "|" + s.name.toLowerCase();
+
+function studentRow(s) {
+  const key = keyFor(s);
+  const pct = pctFor(s);
+  const had = previousPositions.has(key);
+  const startPct = had ? previousPositions.get(key) : 0;
+  const moved = had ? startPct !== pct : pct > 0;
+  const hatched = s.doneCount === STEPS.length;
+  const skipped = STEPS.filter((st, i) => !s.done[st] && i < s.furthest);
+  const nextStep = STEPS.find(st => !s.done[st]);
+  const segW = stepPos(1);
+  // Only show the next-step sign when every earlier step is finished (no skipped steps)
+  const sign = s.furthest >= 0 && s.doneCount === s.furthest + 1 && NEXT_SIGNS[s.furthest]
+    ? `<div class="sign" style="left:${stepPos(s.furthest) + segW / 2}% "><i>${NEXT_SIGNS[s.furthest].icon}</i>${NEXT_SIGNS[s.furthest].text}</div>`
+    : "";
+  const tip = hatched ? "Finished all five steps!"
+    : skipped.length ? `Skipped: ${skipped.join(", ")}` : `${s.doneCount}/5 done · next: ${nextStep}`;
+  return `
+    <div class="stu${hatched ? " hatched" : ""}${skipped.length ? " flag" : ""}" title="${esc(s.name)} — ${tip}">
+      <div class="name">${esc(s.name)}</div>
+      <div class="track">
+        <div class="rail"></div><div class="rail-end"></div>
+        <div class="fill" data-to="${pct}" style="width:${startPct}%"></div>
+        ${STEPS.map((st, i) => {
+          const cls = s.done[st] ? " done" : (i < s.furthest ? " skipped" : "");
+          return `<div class="nest${cls}" style="left:${stepPos(i)}%"><span>${i + 1}</span></div>`;
+        }).join("")}
+        ${sign}
+        <div class="egg${moved ? " bounce" : ""}" data-to="${pct}" style="left:${startPct}%">${eggSvg(hatched)}</div>
+      </div>
+    </div>`;
+}
+
+function render() {
+  const q = searchEl.value.trim().toLowerCase();
+  const list = allStudents.filter(s =>
+    (!q || s.name.toLowerCase().includes(q)) && (!teacherEl.value || s.teacher === teacherEl.value));
+
+  if (!allStudents.length) {
+    board.style.columnCount = "";
+    board.innerHTML = `<div class="msg"><h2>The nest is empty 🥚</h2>No form responses yet. Students will appear here as soon as they submit.</div>`;
+    return;
+  }
+  if (!list.length) {
+    board.style.columnCount = "";
+    board.innerHTML = `<div class="msg">No students match that search.</div>`;
+    return;
+  }
+
+  // Bundle students into their groups (separate bubbles per teacher if there are several)
+  const multiTeacher = new Set(list.map(s => s.teacher)).size > 1;
+  const groups = new Map();
+  list.forEach(s => {
+    const k = (multiTeacher ? s.teacher : "") + "|" + (s.group || "");
+    if (!groups.has(k)) groups.set(k, { teacher: s.teacher, group: s.group, kids: [] });
+    groups.get(k).kids.push(s);
+  });
+  const ordered = [...groups.values()].sort((a, b) =>
+    a.teacher.localeCompare(b.teacher) ||
+    ((parseFloat(a.group) || 9999) - (parseFloat(b.group) || 9999)) ||
+    a.group.localeCompare(b.group));
+
+  board.innerHTML = ordered.map((g, idx) => {
+    g.kids.sort((a, b) => a.name.localeCompare(b.name));
+    const allDone = g.kids.every(k => k.doneCount === STEPS.length);
+    const title = g.group ? `Group ${esc(g.group)}` : "No group yet";
+    return `
+      <section class="group${allDone ? " all-hatched" : ""}" style="animation-delay:${Math.min(idx * 40, 500)}ms">
+        <div class="ghead">
+          <b>${title}${multiTeacher && g.teacher ? `<small>${esc(g.teacher)}</small>` : ""}</b>
+          <div class="labels">${STEPS.map((st, i) => `<span style="left:${stepPos(i)}%">${st}</span>`).join("")}</div>
+        </div>
+        ${g.kids.map(studentRow).join("")}
+      </section>`;
+  }).join("");
+
+  fitToScreen();
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    board.querySelectorAll(".egg").forEach(el => { el.style.left = el.dataset.to + "%"; });
+    board.querySelectorAll(".fill").forEach(el => { el.style.width = el.dataset.to + "%"; });
+  }));
+  list.forEach(s => previousPositions.set(keyFor(s), pctFor(s)));
+}
+
+/* =========================================================
+   Fit the whole class on one screen: try 1–4 columns and pick the
+   layout that lets everything be as large as possible without scrolling.
+   (Phones just scroll in a single column.)
+   ========================================================= */
+const MIN_COL_EM = 27;   // narrowest a column may get, in board-em
+function fitToScreen() {
+  if (!board.querySelector(".group")) return;
+  if (window.innerWidth < 700) { board.style.columnCount = 1; board.style.fontSize = "16px"; return; }
+  const avail = window.innerHeight - board.getBoundingClientRect().top - 16;
+  const width = board.clientWidth;
+  const fits = (cols, size) => {
+    board.style.columnCount = cols;
+    board.style.fontSize = size + "px";
+    const colWidth = (width - (cols - 1) * 0.8 * size) / cols;
+    return colWidth >= MIN_COL_EM * size && board.scrollHeight <= avail;
+  };
+  let best = { cols: 1, size: 9 };
+  for (let cols = 1; cols <= 4; cols++) {
+    let lo = 9, hi = 22;
+    if (!fits(cols, lo)) continue;
+    for (let n = 0; n < 12; n++) { const mid = (lo + hi) / 2; if (fits(cols, mid)) lo = mid; else hi = mid; }
+    if (lo > best.size + 0.3) best = { cols, size: lo };
+  }
+  board.style.columnCount = best.cols;
+  board.style.fontSize = Math.floor(best.size * 10) / 10 + "px";
+}
+let resizeTimer;
+window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fitToScreen, 120); });
+
+async function refresh() {
+  document.getElementById("updatedText").textContent = "Checking the nest…";
+  try {
+    const sheet = await loadSheet();
+    allStudents = buildStudents(sheet);
+    fillFilters();
+    render();
+    document.getElementById("updatedText").textContent =
+      "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  } catch (err) {
+    console.error(err);
+    document.getElementById("updatedText").textContent = "Couldn't reach the sheet";
+    if (!allStudents.length) {
+      board.innerHTML = `<div class="msg"><h2>Uh-oh, a cracked connection 🥚</h2>
+        The board couldn't read the Google Sheet. Make sure it's shared as
+        <code>Anyone with the link → Viewer</code> and the tab is named <code>${esc(SHEET_TAB)}</code>.</div>`;
     }
   }
 }
-function init(){
-  const trims = loadDraft();
-  const tbox = $("#themes");
-  Object.entries(THEMES).forEach(([k,t]) => {
-    const l = document.createElement("label"); const r = document.createElement("input"); r.type = "radio"; r.name = "theme"; r.value = k;
-    r.onchange = () => { state.s.theme = k; refresh(); };
-    const i = document.createElement("i"); i.style.background = `linear-gradient(135deg, ${t.bg1}, ${t.bg2})`;
-    l.append(r, i, document.createTextNode(t.label)); tbox.append(l);
-  });
-  syncInputs(); Object.keys(SLOTS).forEach(renderSlot);
-  for(const k of ["name","ask","observe","improve"]) $("#"+k).addEventListener("input", e => { state[k] = e.target.value; markReal(); refresh(); });
-  document.querySelectorAll('input[name=survived]').forEach(r => r.addEventListener("change", () => { state.survived = r.value; refresh(); }));
-  $("#transition").onchange = e => { state.s.transition = e.target.value; refresh(); };
-  $("#keepAudio").onchange = e => { state.s.keepAudio = e.target.checked; saveDraft(); };
-  $("#buildBtn").onclick = () => build().catch(err => { setMsg("Something went wrong while making the video: " + (err && err.message || err) + ". Try again.", "bad"); building = null; $("#editor").disabled = false; $("#cancelBtn").hidden = true; $("#bar").hidden = true; $("#recTag").hidden = true; refresh(); });
-  $("#cancelBtn").onclick = () => { if(building) building.cancel = true; };
-  $("#saveBtn").onclick = saveVideo;
-  $("#sampleBtn").onclick = () => { if(!building) loadExample(); };
-  $("#clearBtn").onclick = () => { if(!building) clearAll(); };
-  $("#sampleNotice").hidden = !sample;
-  refresh();
-  restoreFiles(trims);
-  document.fonts && document.fonts.ready.then(() => { plan = buildPlan(); drawPreview(); });
-  (async () => { try{ dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null; }catch(e){ dl = null; } })();
-}
-init();
-})();
-</script>
 
+[searchEl, teacherEl].forEach(el => el.addEventListener("input", () => { previousPositions.clear(); render(); }));
+document.getElementById("refreshBtn").addEventListener("click", refresh);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitToScreen);
+refresh();
+setInterval(refresh, REFRESH_SECONDS * 1000);
+</script>
 </body>
 </html>

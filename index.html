@@ -209,6 +209,7 @@ input[type=range]{width:100%;accent-color:var(--accent);min-height:28px}
           <span class="hint" id="outInfo"></span>
         </div>
         <div class="msg" id="saveMsg"></div>
+        <div class="hint" id="diag" style="font-size:12px"></div>
       </div>
       <div class="opts">
         <div class="lab">Card colors</div>
@@ -701,11 +702,25 @@ function setMsg(t, cls){ const m = $("#msg"); m.textContent = t; m.className = "
 /* ---------- making the video ---------- */
 function pickMime(){
   if(!window.MediaRecorder) return null;
-  const list = ['video/mp4;codecs="avc1.42E01F,mp4a.40.2"','video/mp4;codecs=avc1,mp4a','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const list = ['video/mp4;codecs="avc1.42E01F,mp4a.40.2"','video/mp4;codecs=avc1,mp4a','video/mp4;codecs=avc1,opus','video/mp4;codecs=avc1','video/mp4;codecs=vp9,opus','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
   for(const m of list){ try{ if(MediaRecorder.isTypeSupported(m)) return m; }catch(e){} }
   return "";
 }
 function seekTo(v, t){ return new Promise(r => { const done = () => { v.removeEventListener("seeked", done); r(); }; v.addEventListener("seeked", done); v.currentTime = t; setTimeout(done, 2000); }); }
+
+// Try each format in order (MP4 first) and keep the first one the browser actually accepts.
+function makeRecorder(stream){
+  const list = ['video/mp4;codecs="avc1.42E01F,mp4a.40.2"','video/mp4;codecs=avc1,mp4a','video/mp4;codecs=avc1,opus','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'];
+  const errors = [];
+  for(const m of list){
+    let sup = false; try{ sup = MediaRecorder.isTypeSupported(m); }catch(e){}
+    if(!sup && !/^video\/mp4$/.test(m)) continue;
+    for(const o of [{mimeType:m, videoBitsPerSecond:6e6, audioBitsPerSecond:128000}, {mimeType:m}]){
+      try{ return {rec:new MediaRecorder(stream, o), mime:m, errors}; }catch(e){ errors.push(m + " (" + (e && e.name || "error") + ")"); }
+    }
+  }
+  return {rec:new MediaRecorder(stream), mime:"", errors};
+}
 
 async function build(){
   if(!nm()){ setMsg("Type your first name in step 1 first.", "bad"); $("#name").focus(); return; }
@@ -736,8 +751,7 @@ async function build(){
 
   const stream = cv.captureStream(30);
   if(dest) dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
-  const opts = {videoBitsPerSecond: 6e6, audioBitsPerSecond: 128000}; if(mime) opts.mimeType = mime;
-  let rec; try{ rec = new MediaRecorder(stream, opts); }catch(e){ rec = new MediaRecorder(stream); }
+  const made = makeRecorder(stream), rec = made.rec;
   const chunks = []; rec.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
   const onVis = () => { if(document.hidden) building.hidden = true; };
   document.addEventListener("visibilitychange", onVis);
@@ -773,12 +787,16 @@ async function build(){
   rec.stop(); await stopped; cleanup();
   const wasHidden = building.hidden, cancelled = building.cancel; building = null;
   if(cancelled){ setMsg("Stopped. Nothing was saved."); refresh(); return; }
-  const type = rec.mimeType || mime || "video/webm";
+  const head = new Uint8Array(await chunks[0].slice(0, 12).arrayBuffer());
+  const isMp4 = head[4] === 0x66 && head[5] === 0x74 && head[6] === 0x79 && head[7] === 0x70; // "ftyp"
+  const isWebm = head[0] === 0x1A && head[1] === 0x45 && head[2] === 0xDF && head[3] === 0xA3;
+  const type = isMp4 ? "video/mp4" : isWebm ? "video/webm" : (rec.mimeType || made.mime || "video/webm");
+  $("#diag").textContent = `Recording info: asked for ${made.mime || "browser default"}; browser reported ${rec.mimeType || "nothing"}; file is ${isMp4 ? "MP4" : isWebm ? "WebM" : "unknown"}.` + (made.errors.length ? " Refused: " + made.errors.join("; ") : "");
   const blob = new Blob(chunks, {type});
   if(result) URL.revokeObjectURL(result.url);
   result = {blob, url:URL.createObjectURL(blob), ext: /mp4/.test(type) ? "mp4" : "webm"};
   $("#out").src = result.url; $("#result").hidden = false; $("#saveMsg").textContent = "";
-  $("#outInfo").textContent = `${fmt(pl.total)} · ${(blob.size/1048576).toFixed(1)} MB`;
+  $("#outInfo").textContent = `${fmt(pl.total)} · ${(blob.size/1048576).toFixed(1)} MB · ${result.ext.toUpperCase()}` + (result.ext === "webm" ? " (this browser can only make WebM; on an iPad in Safari it saves as MP4)" : "");
   setMsg(wasHidden ? "Done, but the screen was switched away during part of it, so some parts may look frozen. Watch it, and make it again if needed." : "Your video is ready! Watch it, then tap Save video.", wasHidden ? "bad" : "good");
   refresh();
   $("#result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"nearest"});

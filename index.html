@@ -3,499 +3,408 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Egg Car Collision Lab</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<title>Qualifier Results Dashboard</title>
 <style>
   :root {
-    --shell: #fffaf0; --shell-2: #fff3dc;
-    --yolk: #ffc93c; --yolk-deep: #f4a300;
-    --straw: #e9c98b; --nest: #a8743f; --nest-dark: #6e4a26;
-    --ink: #3b2a1a; --ink-soft: #7a634b;
-    --done: #7cc576; --done-deep: #3f8f3a;
-    --warn: #e5484d; --warn-deep: #b4232a;
-    --card: #ffffff; --line: #f0e2c6;
-    --shadow: 0 4px 14px rgba(110, 74, 38, .10);
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --text: #1d2433;
+    --muted: #64708a;
+    --border: #e1e6ef;
+    --accent: #c8102e;
+    --accent-soft: #fde8ec;
+    --row-alt: #f9fafc;
+    --yes: #1a7f37;
+    --yes-bg: #e6f4ea;
+    --no: #8a94a6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c;
+      --surface: #1b2029;
+      --text: #e6e9ef;
+      --muted: #9aa4b5;
+      --border: #2c3340;
+      --accent: #ff5a6e;
+      --accent-soft: #3a1c22;
+      --row-alt: #1f2530;
+      --yes: #5fd27d;
+      --yes-bg: #1b3324;
+      --no: #7d8799;
+    }
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; }
   body {
-    font-family: "Nunito", system-ui, sans-serif; color: var(--ink);
-    background: radial-gradient(circle at 10% 0%, #fff6e0 0, transparent 40%),
-                radial-gradient(circle at 90% 10%, #fdeccc 0, transparent 35%), var(--shell);
-    min-height: 100vh;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
   }
-  .wrap { padding: 10px 16px 12px; }
-
-  /* ---------- Compact header ---------- */
-  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-  .logo { width: 66px; height: 48px; flex: none; overflow: visible; }
-  .wall { width: 27px; height: 50px; flex: none; margin-left: 2px; }
-  .logo .car { animation: rumble .45s ease-in-out infinite alternate; transform-box: view-box; }
-  @keyframes rumble { from { translate: 0 0; } to { translate: 0 -1.5px; } }
-  @media (prefers-reduced-motion: reduce) { .logo .car { animation: none; } }
-  h1 { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.7rem; line-height: 1; margin: 0; color: var(--nest-dark); white-space: nowrap; }
-  h1 span { color: var(--yolk-deep); }
-  .tools { display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap; }
-  .tools input, .tools select {
-    font: inherit; font-weight: 600; font-size: .9rem; color: var(--ink);
-    background: var(--card); border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; min-width: 0;
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 16px 0;
   }
-  .tools input { width: 200px; }
-  .tools input:focus, .tools select:focus { outline: none; border-color: var(--yolk); }
-  .updated { font-size: .78rem; color: var(--ink-soft); font-weight: 600; white-space: nowrap; }
-  .tools button {
-    font: inherit; font-weight: 800; font-size: .85rem; cursor: pointer;
-    background: var(--yolk); color: var(--ink); border: none; border-radius: 999px;
-    padding: 6px 14px; box-shadow: 0 3px 0 var(--yolk-deep);
+  .wrap { max-width: 1280px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  .subtitle { color: var(--muted); margin: 0 0 16px; font-size: 0.9rem; }
+  nav.tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
   }
-  .tools button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--yolk-deep); }
-
-  /* ---------- Board: group bubbles in balanced columns.
-     Everything inside is sized in em, so the script can shrink or grow
-     the whole board (font-size) until the class fits on one screen. ---------- */
-  .board { column-gap: .8em; font-size: 16px; }
-  .group {
-    break-inside: avoid; display: inline-block; width: 100%;
-    background: var(--card); border: 2px solid var(--line); border-radius: 1em;
-    box-shadow: var(--shadow); padding: .4em .8em .3em; margin-bottom: .7em;
-    animation: pop .4s ease both;
+  nav.tabs button {
+    appearance: none;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 600;
+    padding: 12px 18px;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
   }
-  .group.all-hatched { border-color: var(--yolk); background: linear-gradient(180deg, #fffbe8, #fff); }
-  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-  .ghead, .stu { display: grid; grid-template-columns: 6.8em 1fr; align-items: center; }
-  .ghead { min-height: 1.6em; padding: .1em 0; border-bottom: 2px dotted var(--line); margin-bottom: .1em; }
-  .ghead b { font-family: "Baloo 2", cursive; font-weight: 800; font-size: 1.05em; line-height: 1.1; color: var(--nest-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-right: .3em; }
-  .ghead b small { display: block; font-family: "Nunito"; font-weight: 700; font-size: .68em; line-height: 1.2; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; }
-  .labels { position: relative; align-self: stretch; min-height: 1.4em; margin: 0 1em; }
-  .labels span {
-    position: absolute; top: 50%; transform: translate(-50%, -50%);
-    font-family: "Baloo 2", cursive; font-weight: 800; font-size: .52em; letter-spacing: .02em; color: var(--nest);
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
   }
-
-  .stu { height: 3.05em; }
-  .name { font-weight: 800; font-size: .92em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: .3em; }
-  .stu.hatched .name::after { content: " 🐣"; }
-  .stu.flag .name { color: var(--warn-deep); }
-
-  .track { position: relative; height: 100%; margin: 0 1em; }
-  .rail, .fill { position: absolute; top: 50%; height: .32em; transform: translateY(-50%); border-radius: 99px; }
-  .rail-end {
-    position: absolute; top: 50%; left: 80%; right: 0; transform: translateY(-50%);
-    border-top: .14em dashed var(--straw); opacity: .8;
+  main { padding: 20px 16px 40px; }
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
   }
-  .sign {
-    position: absolute; top: calc(50% + 1.35em); transform: translateX(-50%);
-    white-space: nowrap; line-height: 1.2;
-    font-size: .52em; font-weight: 800; color: var(--nest-dark);
-    background: var(--yolk); border-radius: 99px; padding: .15em .65em .2em;
-    box-shadow: 0 .15em 0 var(--yolk-deep); z-index: 3;
-    animation: signPop .5s .6s cubic-bezier(.5,1.8,.5,1) both;
+  .toolbar h2 { margin: 0; font-size: 1.15rem; }
+  .meta { color: var(--muted); font-size: 0.85rem; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .controls button, .controls input {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
   }
-  .sign::after {
-    content: ""; position: absolute; left: 50%; top: -.4em; transform: translateX(-50%);
-    border: .4em solid transparent; border-bottom-color: var(--yolk); border-top: 0;
+  .controls button { cursor: pointer; }
+  .controls button:hover { border-color: var(--accent); color: var(--accent); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-x: auto;
   }
-  .sign i { font-style: normal; margin-right: .2em; }
-  @keyframes signPop { from { opacity: 0; transform: translateX(-50%) scale(.4); } }
-  .rail { left: 0; right: 20%; background: repeating-linear-gradient(90deg, var(--straw) 0 .5em, #f3dcae .5em .9em); }
-  .fill { left: 0; background: linear-gradient(90deg, var(--yolk), var(--yolk-deep)); transition: width 1s cubic-bezier(.5,1.6,.4,1); }
-  .nest {
-    position: absolute; top: 50%; width: 1.2em; height: 1.2em; transform: translate(-50%, -50%);
-    border-radius: 50%; background: #fff; border: .14em solid var(--straw);
-    display: grid; place-items: center; color: var(--straw); font-weight: 800;
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
   }
-  .nest span { font-size: .55em; }
-  .nest.done { background: var(--done); border-color: var(--done-deep); color: #fff; }
-  .nest.done::after { content: "✓"; font-size: .7em; }
-  .nest.skipped { background: var(--warn); border-color: var(--warn-deep); color: #fff; animation: pulse 1.6s ease-in-out infinite; }
-  .nest.skipped::after { content: "!"; font-size: .8em; font-weight: 900; }
-  .nest.done span, .nest.skipped span { display: none; }
-  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(229,72,77,.45); } 50% { box-shadow: 0 0 0 .35em rgba(229,72,77,0); } }
-  .egg {
-    position: absolute; top: 50%; width: 1.45em; height: 1.8em; transform: translate(-50%, -82%);
-    transition: left 1.1s cubic-bezier(.5,1.5,.45,1);
-    filter: drop-shadow(0 .12em .1em rgba(110,74,38,.25)); z-index: 2; pointer-events: none;
+  td.award { white-space: normal; min-width: 220px; }
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
   }
-  .egg svg { width: 100%; height: 100%; display: block; }
-  .egg.bounce { animation: hop 1.1s ease; }
-  @keyframes hop { 0%,60%,100% { margin-top: 0; } 35% { margin-top: -.6em; } 75% { margin-top: -.2em; } }
-
-  .msg {
-    background: var(--card); border: 2px dashed var(--straw); border-radius: 18px;
-    padding: 24px 20px; text-align: center; color: var(--ink-soft); font-weight: 600; font-size: 16px;
+  th:hover { color: var(--text); }
+  th.sorted { color: var(--accent); }
+  th .arrow { display: inline-block; width: 1em; font-size: 0.75rem; }
+  th.num, td.num { text-align: right; }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr:hover { background: var(--accent-soft); }
+  td.team { font-weight: 600; }
+  td.best { font-weight: 700; }
+  .na { color: var(--no); font-style: italic; }
+  .pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
   }
-  .msg h2 { font-family: "Baloo 2", cursive; color: var(--nest-dark); margin: 0 0 6px; }
-  .msg code { background: var(--shell-2); padding: 2px 6px; border-radius: 6px; }
-
-  @media (max-width: 700px) {
-    .tools { margin-left: 0; width: 100%; }
-    .tools input { flex: 1 1 140px; width: auto; }
-    .ghead, .stu { grid-template-columns: 5.4em 1fr; }
-    .labels span { font-size: .46em; }
+  .pill.yes { background: var(--yes-bg); color: var(--yes); }
+  .pill.no { color: var(--no); }
+  .status {
+    padding: 40px 16px;
+    text-align: center;
+    color: var(--muted);
   }
+  .status.error { color: var(--accent); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <svg class="logo" viewBox="0 0 100 72" role="img" aria-label="An egg recklessly driving a race car">
-      <!-- speed lines -->
-      <g stroke="#e9c98b" stroke-width="3" stroke-linecap="round">
-        <line x1="1" y1="30" x2="12" y2="30"/><line x1="4" y1="41" x2="18" y2="41"/><line x1="0" y1="52" x2="10" y2="52"/>
-      </g>
-      <!-- dust kicked up by the back wheel -->
-      <g fill="#efdcb5"><circle cx="17" cy="63" r="5"/><circle cx="9" cy="66" r="3.5"/><circle cx="23" cy="68" r="3"/></g>
-      <g class="car" transform="rotate(-10 50 62)">
-        <!-- flying scarf -->
-        <path d="M43 37 C35 33 27 31 17 35 L20 40 C27 37 34 40 42 42z" fill="#3fa7d6"/>
-        <path d="M24 37 l-6 -6 M28 38 l-5 -7" stroke="#2b86b0" stroke-width="2" stroke-linecap="round"/>
-        <!-- the egg driver -->
-        <path d="M50 6C41 6 35 20 35 31c0 9 7 15 15 15s15-6 15-15C65 20 59 6 50 6z" fill="#fff" stroke="#e9c98b" stroke-width="2.5"/>
-        <path d="M36 22 h28" stroke="#6e4a26" stroke-width="3"/>
-        <circle cx="45" cy="23" r="5.2" fill="#bfe6ff" stroke="#6e4a26" stroke-width="2.5"/>
-        <circle cx="56.5" cy="23" r="5.2" fill="#bfe6ff" stroke="#6e4a26" stroke-width="2.5"/>
-        <circle cx="47" cy="23.5" r="1.9" fill="#3b2a1a"/><circle cx="58.5" cy="23.5" r="1.9" fill="#3b2a1a"/>
-        <path d="M43 31 q7 9 14 0z" fill="#3b2a1a"/><path d="M45 31.5 h10" stroke="#fff" stroke-width="1.6"/>
-        <!-- steering wheel -->
-        <path d="M60 41 l6 -5" stroke="#3b2a1a" stroke-width="2.5" stroke-linecap="round"/>
-        <circle cx="67.5" cy="34.5" r="3.4" fill="none" stroke="#3b2a1a" stroke-width="2.2"/>
-        <!-- race car -->
-        <path d="M24 43h48c9 0 15 5 17 11v5H14c-2-9 2-16 10-16z" fill="#e5484d" stroke="#b4232a" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M84 46 l9 -3 v8z" fill="#ffc93c" stroke="#f4a300" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M22 51 h56" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="31" cy="61" r="8.5" fill="#3b2a1a"/><circle cx="31" cy="61" r="3.5" fill="#d9d2c5"/>
-        <circle cx="75" cy="61" r="8.5" fill="#3b2a1a"/><circle cx="75" cy="61" r="3.5" fill="#d9d2c5"/>
-      </g>
-    </svg>
-    <h1>Egg Car <span>Collision Lab</span></h1>
-    <svg class="wall" viewBox="0 0 28 52" role="img" aria-label="A brick wall">
-      <rect x="0" y="0" width="28" height="48" fill="#e8dcc8"/>
-      <rect x="0.75" y="0.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="0.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="8.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="8.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="8.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/><rect x="0.75" y="16.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="16.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="24.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="24.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="24.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/><rect x="0.75" y="32.75" width="12.5" height="6.5" rx="1" fill="#c4553a"/><rect x="14.75" y="32.75" width="12.5" height="6.5" rx="1" fill="#cf6447"/><rect x="0.75" y="40.75" width="5.5" height="6.5" rx="1" fill="#cf6447"/><rect x="7.75" y="40.75" width="12.5" height="6.5" rx="1" fill="#b5462f"/><rect x="21.75" y="40.75" width="5.5" height="6.5" rx="1" fill="#c4553a"/>
-      <path d="M2 14 l5 4 -3 5 6 4" stroke="#6e3524" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="-2" y="48" width="32" height="4" rx="2" fill="#e9c98b"/>
-    </svg>
-    <div class="tools">
-      <input id="search" type="search" placeholder="🔍 Find a student…" aria-label="Search students">
-      <select id="teacherFilter" aria-label="Filter by teacher"><option value="">All teachers</option></select>
-      <span class="updated" id="updatedText">Loading…</span>
-      <button id="refreshBtn" type="button">↻ Refresh</button>
+<header>
+  <div class="wrap">
+    <h1>Qualifier Results</h1>
+    <p class="subtitle">Live from the Qualifier Competition 26 spreadsheet</p>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="toolbar">
+      <div>
+        <h2 id="locTitle"></h2>
+        <div class="meta" id="meta"></div>
+      </div>
+      <div class="controls">
+        <input type="search" id="filter" placeholder="Filter teams…" aria-label="Filter teams">
+        <button id="resetSort" title="Sort by Best Score, highest first">Reset sort</button>
+        <button id="refresh" title="Reload data from the spreadsheet">Refresh</button>
+      </div>
     </div>
-  </header>
-  <main class="board" id="board"><div class="msg">Gathering the eggs…</div></main>
-</div>
+    <div class="card" id="card"><div class="status">Loading…</div></div>
+  </div>
+</main>
 
 <script>
-/* =========================================================
-   SETTINGS
-   ========================================================= */
-const SHEET_ID   = "1kPS2ggL5fbPn51m6TvhCfranGeJ9z_0xDW5pOVneqvI";
-const SHEET_TAB  = "Form Responses 1";   // tab name at the bottom of the sheet
-const REFRESH_SECONDS = 60;               // how often the board reloads
+// ---------- Configuration ----------
+const SHEET_ID = "179x63PbQarpGgOr2qHen6P_zWnaFBZqF89ViIIZjrmA";
 
-/* The five steps, matched to the sheet by the capitalised word in each column header. */
-const STEPS = ["ASK", "EXPLORE", "MODEL", "EVALUATE", "EXPLAIN"];
-
-/* =========================================================
-   Data loading (Google Visualization endpoint — no API key needed;
-   the sheet just has to be shared as "Anyone with the link can view")
-   ========================================================= */
-const baseUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?headers=1&sheet=${encodeURIComponent(SHEET_TAB)}`;
-
-function parseGviz(text) {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  return JSON.parse(text.slice(start, end + 1));
-}
-
-async function loadViaFetch() {
-  const res = await fetch(baseUrl + "&tqx=out:json&_=" + Date.now());
-  if (!res.ok) throw new Error("HTTP " + res.status);
-  return parseGviz(await res.text());
-}
-
-function loadViaJsonp() {
-  return new Promise((resolve, reject) => {
-    const cb = "eggCb" + Date.now();
-    const s = document.createElement("script");
-    const timer = setTimeout(() => { cleanup(); reject(new Error("timeout")); }, 15000);
-    function cleanup() { clearTimeout(timer); delete window[cb]; s.remove(); }
-    window[cb] = data => { cleanup(); resolve(data); };
-    s.onerror = () => { cleanup(); reject(new Error("script error")); };
-    s.src = baseUrl + "&tqx=responseHandler:" + cb + "&_=" + Date.now();
-    document.head.appendChild(s);
-  });
-}
-
-async function loadSheet() {
-  let data;
-  try { data = await loadViaFetch(); }
-  catch (e) { data = await loadViaJsonp(); }
-  if (data.status === "error") throw new Error((data.errors && data.errors[0] && data.errors[0].detailed_message) || "Sheet error");
-  const headers = data.table.cols.map(c => (c.label || "").trim());
-  const rows = data.table.rows.map(r => (r.c || []).map(cell => {
-    if (!cell) return "";
-    if (cell.f != null) return String(cell.f);
-    return cell.v == null ? "" : String(cell.v);
-  }));
-  return { headers, rows };
-}
-
-/* =========================================================
-   Turn form responses into one record per student.
-   The form has repeated sections (one per teacher), each starting
-   with a "Name" column, followed by group + the five step columns.
-   A student's step counts as done if ANY of their rows says Yes.
-   ========================================================= */
-function buildStudents({ headers, rows }) {
-  let teacherCol = -1, timeCol = -1;
-  const sections = [];
-  let current = null;
-
-  headers.forEach((h, i) => {
-    const lower = h.toLowerCase();
-    if (lower === "name" || lower === "student name" || lower === "your name") {
-      current = { name: i, group: -1, steps: {} };
-      sections.push(current);
-      return;
-    }
-    if (!current) {
-      if (lower.includes("teacher")) teacherCol = i;
-      if (lower.includes("timestamp")) timeCol = i;
-      return;
-    }
-    if (lower.includes("group")) { current.group = i; return; }
-    STEPS.forEach(step => {
-      if (new RegExp("\\b" + step + "\\b").test(h) && current.steps[step] == null) current.steps[step] = i;
-    });
-  });
-
-  const isYes = v => /^\s*(y|yes|true|done|x|✓)\s*$/i.test(v || "");
-  const students = new Map();
-
-  rows.forEach(row => {
-    const teacher = teacherCol >= 0 ? (row[teacherCol] || "").trim() : "";
-    const time = timeCol >= 0 ? row[timeCol] : "";
-    sections.forEach(sec => {
-      const rawName = (row[sec.name] || "").trim().replace(/\s+/g, " ");
-      if (!rawName) return;
-      const key = teacher.toLowerCase() + "|" + rawName.toLowerCase();
-      if (!students.has(key)) {
-        students.set(key, { name: rawName, teacher, group: "", done: {}, last: "" });
-      }
-      const s = students.get(key);
-      const grp = sec.group >= 0 ? (row[sec.group] || "").trim() : "";
-      if (grp) s.group = grp.replace(/\.0$/, "");
-      STEPS.forEach(step => {
-        const col = sec.steps[step];
-        if (col != null && isYes(row[col])) s.done[step] = true;
-      });
-      if (time) s.last = time;
-    });
-  });
-
-  return [...students.values()].map(s => {
-    const doneCount = STEPS.filter(st => s.done[st]).length;
-    let furthest = -1;
-    STEPS.forEach((st, i) => { if (s.done[st]) furthest = i; });
-    return { ...s, doneCount, furthest };
-  });
-}
-
-/* =========================================================
-   Rendering
-   ========================================================= */
-const board = document.getElementById("board");
-const searchEl = document.getElementById("search");
-const teacherEl = document.getElementById("teacherFilter");
-let allStudents = [];
-let previousPositions = new Map();
-
-function eggSvg(hatched) {
-  if (hatched) {
-    return `<svg viewBox="0 0 46 58" aria-hidden="true">
-      <circle cx="23" cy="24" r="14" fill="#ffd84a" stroke="#f4a300" stroke-width="2"/>
-      <path d="M19 9q4-6 6 0" stroke="#f4a300" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <circle cx="18" cy="22" r="2.4" fill="#3b2a1a"/><circle cx="28" cy="22" r="2.4" fill="#3b2a1a"/>
-      <path d="M21 27l2 3 2-3z" fill="#f47c20"/>
-      <path d="M5 34l6 4 6-5 6 5 6-5 6 5 6-4c0 12-8 21-18 21S5 46 5 34z" fill="#fff" stroke="#e9c98b" stroke-width="2.5" stroke-linejoin="round"/>
-    </svg>`;
-  }
-  return `<svg viewBox="0 0 46 58" aria-hidden="true">
-    <path d="M23 3C12 3 4 21 4 35c0 12 8 20 19 20s19-8 19-20C42 21 34 3 23 3z" fill="#fff" stroke="#e9c98b" stroke-width="2.5"/>
-    <ellipse cx="15" cy="20" rx="3" ry="6" fill="#fff6e0" transform="rotate(20 15 20)"/>
-    <circle cx="17" cy="32" r="2.4" fill="#3b2a1a"/><circle cx="29" cy="32" r="2.4" fill="#3b2a1a"/>
-    <path d="M19 39q4 3.5 8 0" stroke="#3b2a1a" stroke-width="2" fill="none" stroke-linecap="round"/>
-  </svg>`;
-}
-
-function esc(str) {
-  return String(str).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function fillFilters() {
-  const keep = teacherEl.value;
-  const teachers = [...new Set(allStudents.map(s => s.teacher).filter(Boolean))].sort();
-  teacherEl.innerHTML = `<option value="">All teachers</option>` + teachers.map(t => `<option>${esc(t)}</option>`).join("");
-  if (teachers.includes(keep)) teacherEl.value = keep;
-  teacherEl.style.display = teachers.length > 1 ? "" : "none";
-}
-
-/* The five steps sit along the first 80% of each timeline; the last 20% is
-   room for the "Keep testing" sign after EXPLAIN. */
-const LINE_END = 80;
-const stepPos = i => (i / (STEPS.length - 1)) * LINE_END;
-/* The sign that appears on the line right after a student's furthest finished step */
-const NEXT_SIGNS = [
-  { icon: "✏️", text: "Design your car" },
-  { icon: "🔧", text: "Build your car" },
-  { icon: "🎥", text: "Upload a test video" },
-  { icon: "📝", text: "Describe your collision" },
-  { icon: "🔁", text: "Keep testing" },
+const LOCATIONS = [
+  { label: "Arlington Heights", sheet: "AH Qualifiers" },
+  { label: "Batavia",           sheet: "Batavia Qualifiers" },
+  { label: "Buffalo Grove",     sheet: "BG Qualifiers" },
+  { label: "Naperville",        sheet: "Naperville Qualifiers" }
 ];
-const pctFor = s => stepPos(s.furthest < 0 ? 0 : s.furthest);
-const keyFor = s => s.teacher + "|" + s.name.toLowerCase();
 
-function studentRow(s) {
-  const key = keyFor(s);
-  const pct = pctFor(s);
-  const had = previousPositions.has(key);
-  const startPct = had ? previousPositions.get(key) : 0;
-  const moved = had ? startPct !== pct : pct > 0;
-  const hatched = s.doneCount === STEPS.length;
-  const skipped = STEPS.filter((st, i) => !s.done[st] && i < s.furthest);
-  const nextStep = STEPS.find(st => !s.done[st]);
-  const segW = stepPos(1);
-  // Only show the next-step sign when every earlier step is finished (no skipped steps)
-  const sign = s.furthest >= 0 && s.doneCount === s.furthest + 1 && NEXT_SIGNS[s.furthest]
-    ? `<div class="sign" style="left:${stepPos(s.furthest) + segW / 2}% "><i>${NEXT_SIGNS[s.furthest].icon}</i>${NEXT_SIGNS[s.furthest].text}</div>`
-    : "";
-  const tip = hatched ? "Finished all five steps!"
-    : skipped.length ? `Skipped: ${skipped.join(", ")}` : `${s.doneCount}/5 done · next: ${nextStep}`;
-  return `
-    <div class="stu${hatched ? " hatched" : ""}${skipped.length ? " flag" : ""}" title="${esc(s.name)} — ${tip}">
-      <div class="name">${esc(s.name)}</div>
-      <div class="track">
-        <div class="rail"></div><div class="rail-end"></div>
-        <div class="fill" data-to="${pct}" style="width:${startPct}%"></div>
-        ${STEPS.map((st, i) => {
-          const cls = s.done[st] ? " done" : (i < s.furthest ? " skipped" : "");
-          return `<div class="nest${cls}" style="left:${stepPos(i)}%"><span>${i + 1}</span></div>`;
-        }).join("")}
-        ${sign}
-        <div class="egg${moved ? " bounce" : ""}" data-to="${pct}" style="left:${startPct}%">${eggSvg(hatched)}</div>
-      </div>
-    </div>`;
+// Columns shown, in display order. "type" controls how sorting works.
+const COLUMNS = [
+  { key: "Team Name",        type: "text" },
+  { key: "Qualifier",        type: "text" },
+  { key: "Rank",             type: "rank",    num: true },
+  { key: "Advance",          type: "advance" },
+  { key: "Best Score",       type: "number",  num: true, cls: "best" },
+  { key: "Round 1",          type: "number",  num: true },
+  { key: "Round 2",          type: "number",  num: true },
+  { key: "Round 3",          type: "number",  num: true },
+  { key: "Number of Awards", type: "number",  num: true },
+  { key: "Award",            type: "text",    cls: "award" }
+];
+
+const DEFAULT_SORT = { key: "Best Score", dir: "desc" };
+
+// ---------- State ----------
+const cache = {};          // sheet name -> rows
+let current = LOCATIONS[0];
+let sort = { ...DEFAULT_SORT };
+let filterText = "";
+
+// ---------- CSV parsing ----------
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ",") { row.push(field); field = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(field); rows.push(row); row = []; field = "";
+    } else field += c;
+  }
+  if (field !== "" || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+const norm = s => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+async function loadSheet(sheetName, force = false) {
+  if (cache[sheetName] && !force) return cache[sheetName];
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1` +
+              `&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const grid = parseCSV(await res.text());
+  if (!grid.length) return (cache[sheetName] = []);
+
+  // Map our column names to the sheet's header positions (case/space-insensitive)
+  const headers = grid[0].map(norm);
+  const index = {};
+  COLUMNS.forEach(col => { index[col.key] = headers.indexOf(norm(col.key)); });
+
+  const rows = grid.slice(1)
+    .map(r => {
+      const obj = {};
+      COLUMNS.forEach(col => {
+        const i = index[col.key];
+        obj[col.key] = i >= 0 ? String(r[i] ?? "").trim() : "";
+      });
+      return obj;
+    })
+    .filter(o => o["Team Name"] !== "");   // skip blank rows
+
+  return (cache[sheetName] = rows);
+}
+
+// ---------- Sorting ----------
+function sortValue(row, col) {
+  const v = row[col.key];
+  if (v === "") return null;
+  switch (col.type) {
+    case "number": {
+      const n = parseFloat(v.replace(/,/g, ""));
+      return isNaN(n) ? null : n;
+    }
+    case "rank": {
+      const n = parseInt(v, 10);          // "1st" -> 1
+      return isNaN(n) ? null : n;
+    }
+    case "advance": {
+      // "Yes 11" ranks above "No"; among Yes, sort by the trailing number
+      const m = v.match(/^yes\s*(\d+)?/i);
+      if (m) return m[1] ? parseInt(m[1], 10) : 0;
+      return 100000;                      // "No" and anything else
+    }
+    default:
+      return v.toLowerCase();
+  }
+}
+
+function sortRows(rows) {
+  const col = COLUMNS.find(c => c.key === sort.key);
+  const dir = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const va = sortValue(a, col), vb = sortValue(b, col);
+    // Blanks always go to the bottom, whichever direction
+    if (va === null && vb === null) return a["Team Name"].localeCompare(b["Team Name"]);
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    let cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+    if (cmp === 0) {
+      // Tie-break on Best Score (highest first), then team name
+      const ba = sortValue(a, COLUMNS[4]), bb = sortValue(b, COLUMNS[4]);
+      if (ba !== bb) return (bb ?? -1) - (ba ?? -1);
+      return a["Team Name"].localeCompare(b["Team Name"]);
+    }
+    return cmp * dir;
+  });
+}
+
+// Sensible first-click direction per column
+function defaultDir(col) {
+  if (col.type === "number" && col.key !== "Number of Awards") return "desc";
+  if (col.key === "Number of Awards") return "desc";
+  return "asc";   // text A→Z, rank 1st first, advance Yes first
+}
+
+// ---------- Rendering ----------
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function cellHTML(row, col) {
+  const v = row[col.key];
+  if (col.key === "Best Score" && v === "") return '<span class="na">N/A</span>';
+  if (col.key === "Advance") {
+    if (/^yes/i.test(v)) return `<span class="pill yes">${esc(v)}</span>`;
+    if (v) return `<span class="pill no">${esc(v)}</span>`;
+  }
+  if (v === "" && col.num) return '<span class="na">—</span>';
+  return esc(v);
 }
 
 function render() {
-  const q = searchEl.value.trim().toLowerCase();
-  const list = allStudents.filter(s =>
-    (!q || s.name.toLowerCase().includes(q)) && (!teacherEl.value || s.teacher === teacherEl.value));
+  const card = document.getElementById("card");
+  const rows = cache[current.sheet];
+  if (!rows) return;
 
-  if (!allStudents.length) {
-    board.style.columnCount = "";
-    board.innerHTML = `<div class="msg"><h2>The nest is empty 🥚</h2>No form responses yet. Students will appear here as soon as they submit.</div>`;
+  const q = norm(filterText);
+  const visible = sortRows(rows).filter(r =>
+    !q || COLUMNS.some(c => norm(r[c.key]).includes(q)));
+
+  const scored = rows.filter(r => r["Best Score"] !== "").length;
+  const advancing = rows.filter(r => /^yes/i.test(r["Advance"])).length;
+  document.getElementById("meta").textContent =
+    `${rows.length} teams · ${scored} with scores · ${advancing} advancing`;
+
+  if (!visible.length) {
+    card.innerHTML = `<div class="status">${rows.length ? "No teams match that filter." : "No teams listed on this tab yet."}</div>`;
     return;
   }
-  if (!list.length) {
-    board.style.columnCount = "";
-    board.innerHTML = `<div class="msg">No students match that search.</div>`;
-    return;
-  }
 
-  // Bundle students into their groups (separate bubbles per teacher if there are several)
-  const multiTeacher = new Set(list.map(s => s.teacher)).size > 1;
-  const groups = new Map();
-  list.forEach(s => {
-    const k = (multiTeacher ? s.teacher : "") + "|" + (s.group || "");
-    if (!groups.has(k)) groups.set(k, { teacher: s.teacher, group: s.group, kids: [] });
-    groups.get(k).kids.push(s);
-  });
-  const ordered = [...groups.values()].sort((a, b) =>
-    a.teacher.localeCompare(b.teacher) ||
-    ((parseFloat(a.group) || 9999) - (parseFloat(b.group) || 9999)) ||
-    a.group.localeCompare(b.group));
-
-  board.innerHTML = ordered.map((g, idx) => {
-    g.kids.sort((a, b) => a.name.localeCompare(b.name));
-    const allDone = g.kids.every(k => k.doneCount === STEPS.length);
-    const title = g.group ? `Group ${esc(g.group)}` : "No group yet";
-    return `
-      <section class="group${allDone ? " all-hatched" : ""}" style="animation-delay:${Math.min(idx * 40, 500)}ms">
-        <div class="ghead">
-          <b>${title}${multiTeacher && g.teacher ? `<small>${esc(g.teacher)}</small>` : ""}</b>
-          <div class="labels">${STEPS.map((st, i) => `<span style="left:${stepPos(i)}%">${st}</span>`).join("")}</div>
-        </div>
-        ${g.kids.map(studentRow).join("")}
-      </section>`;
+  const head = COLUMNS.map(col => {
+    const active = sort.key === col.key;
+    const arrow = active ? (sort.dir === "asc" ? "▲" : "▼") : "";
+    return `<th class="${col.num ? "num" : ""} ${active ? "sorted" : ""}" data-key="${esc(col.key)}"
+              title="Sort by ${esc(col.key)}">${esc(col.key)} <span class="arrow">${arrow}</span></th>`;
   }).join("");
 
-  fitToScreen();
+  const body = visible.map(r => "<tr>" + COLUMNS.map(col => {
+    const classes = [col.num ? "num" : "", col.cls || "", col.key === "Team Name" ? "team" : ""].join(" ").trim();
+    return `<td class="${classes}">${cellHTML(r, col)}</td>`;
+  }).join("") + "</tr>").join("");
 
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    board.querySelectorAll(".egg").forEach(el => { el.style.left = el.dataset.to + "%"; });
-    board.querySelectorAll(".fill").forEach(el => { el.style.width = el.dataset.to + "%"; });
-  }));
-  list.forEach(s => previousPositions.set(keyFor(s), pctFor(s)));
-}
+  card.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 
-/* =========================================================
-   Fit the whole class on one screen: try 1–4 columns and pick the
-   layout that lets everything be as large as possible without scrolling.
-   (Phones just scroll in a single column.)
-   ========================================================= */
-const MIN_COL_EM = 27;   // narrowest a column may get, in board-em
-function fitToScreen() {
-  if (!board.querySelector(".group")) return;
-  if (window.innerWidth < 700) { board.style.columnCount = 1; board.style.fontSize = "16px"; return; }
-  const avail = window.innerHeight - board.getBoundingClientRect().top - 16;
-  const width = board.clientWidth;
-  const fits = (cols, size) => {
-    board.style.columnCount = cols;
-    board.style.fontSize = size + "px";
-    const colWidth = (width - (cols - 1) * 0.8 * size) / cols;
-    return colWidth >= MIN_COL_EM * size && board.scrollHeight <= avail;
-  };
-  let best = { cols: 1, size: 9 };
-  for (let cols = 1; cols <= 4; cols++) {
-    let lo = 9, hi = 22;
-    if (!fits(cols, lo)) continue;
-    for (let n = 0; n < 12; n++) { const mid = (lo + hi) / 2; if (fits(cols, mid)) lo = mid; else hi = mid; }
-    if (lo > best.size + 0.3) best = { cols, size: lo };
-  }
-  board.style.columnCount = best.cols;
-  board.style.fontSize = Math.floor(best.size * 10) / 10 + "px";
-}
-let resizeTimer;
-window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fitToScreen, 120); });
-
-async function refresh() {
-  document.getElementById("updatedText").textContent = "Checking the nest…";
-  try {
-    const sheet = await loadSheet();
-    allStudents = buildStudents(sheet);
-    fillFilters();
+  card.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+    const col = COLUMNS.find(c => c.key === th.dataset.key);
+    if (sort.key === col.key) sort.dir = sort.dir === "asc" ? "desc" : "asc";
+    else sort = { key: col.key, dir: defaultDir(col) };
     render();
-    document.getElementById("updatedText").textContent =
-      "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }));
+}
+
+async function showLocation(loc, force = false) {
+  current = loc;
+  document.querySelectorAll("#tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.sheet === loc.sheet));
+  document.getElementById("locTitle").textContent = `${loc.label} Qualifier`;
+  document.getElementById("meta").textContent = "";
+  const card = document.getElementById("card");
+
+  if (!cache[loc.sheet] || force) card.innerHTML = '<div class="status">Loading…</div>';
+  try {
+    await loadSheet(loc.sheet, force);
+    if (current === loc) render();
   } catch (err) {
-    console.error(err);
-    document.getElementById("updatedText").textContent = "Couldn't reach the sheet";
-    if (!allStudents.length) {
-      board.innerHTML = `<div class="msg"><h2>Uh-oh, a cracked connection 🥚</h2>
-        The board couldn't read the Google Sheet. Make sure it's shared as
-        <code>Anyone with the link → Viewer</code> and the tab is named <code>${esc(SHEET_TAB)}</code>.</div>`;
+    if (current === loc) {
+      card.innerHTML = `<div class="status error">Couldn't load the "${esc(loc.sheet)}" tab (${esc(err.message)}).<br>
+        Make sure the spreadsheet is shared as "Anyone with the link can view".</div>`;
     }
   }
 }
 
-[searchEl, teacherEl].forEach(el => el.addEventListener("input", () => { previousPositions.clear(); render(); }));
-document.getElementById("refreshBtn").addEventListener("click", refresh);
-if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitToScreen);
-refresh();
-setInterval(refresh, REFRESH_SECONDS * 1000);
+// ---------- Setup ----------
+const tabs = document.getElementById("tabs");
+LOCATIONS.forEach(loc => {
+  const b = document.createElement("button");
+  b.textContent = loc.label;
+  b.dataset.sheet = loc.sheet;
+  b.addEventListener("click", () => {
+    sort = { ...DEFAULT_SORT };        // each tab opens sorted by Best Score
+    showLocation(loc);
+  });
+  tabs.appendChild(b);
+});
+
+document.getElementById("resetSort").addEventListener("click", () => {
+  sort = { ...DEFAULT_SORT }; render();
+});
+document.getElementById("refresh").addEventListener("click", () => showLocation(current, true));
+document.getElementById("filter").addEventListener("input", e => {
+  filterText = e.target.value; render();
+});
+
+showLocation(LOCATIONS[0]);
 </script>
 </body>
 </html>

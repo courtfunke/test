@@ -1,410 +1,1105 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Qualifier Results Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BioGlow Table Scoring</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,800&display=swap">
 <style>
-  :root {
-    --bg: #f4f6fa;
-    --surface: #ffffff;
-    --text: #1d2433;
-    --muted: #64708a;
-    --border: #e1e6ef;
-    --accent: #c8102e;
-    --accent-soft: #fde8ec;
-    --row-alt: #f9fafc;
-    --yes: #1a7f37;
-    --yes-bg: #e6f4ea;
-    --no: #8a94a6;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12151c;
-      --surface: #1b2029;
-      --text: #e6e9ef;
-      --muted: #9aa4b5;
-      --border: #2c3340;
-      --accent: #ff5a6e;
-      --accent-soft: #3a1c22;
-      --row-alt: #1f2530;
-      --yes: #5fd27d;
-      --yes-bg: #1b3324;
-      --no: #7d8799;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 15px;
-  }
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 16px 0;
-  }
-  .wrap { max-width: 1280px; margin: 0 auto; }
-  h1 { margin: 0 0 4px; font-size: 1.5rem; }
-  .subtitle { color: var(--muted); margin: 0 0 16px; font-size: 0.9rem; }
-  nav.tabs {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-  }
-  nav.tabs button {
-    appearance: none;
-    border: none;
-    background: none;
-    color: var(--muted);
-    font: inherit;
-    font-weight: 600;
-    padding: 12px 18px;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    white-space: nowrap;
-  }
-  nav.tabs button:hover { color: var(--text); }
-  nav.tabs button.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-  main { padding: 20px 16px 40px; }
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .toolbar h2 { margin: 0; font-size: 1.15rem; }
-  .meta { color: var(--muted); font-size: 0.85rem; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
-  .controls button, .controls input {
-    font: inherit;
-    font-size: 0.85rem;
-    padding: 7px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--surface);
-    color: var(--text);
-  }
-  .controls button { cursor: pointer; }
-  .controls button:hover { border-color: var(--accent); color: var(--accent); }
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow-x: auto;
-  }
-  table { width: 100%; border-collapse: collapse; }
-  th, td {
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  td.award { white-space: normal; min-width: 220px; }
-  th {
-    position: sticky;
-    top: 0;
-    background: var(--surface);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--muted);
-    cursor: pointer;
-    user-select: none;
-  }
-  th:hover { color: var(--text); }
-  th.sorted { color: var(--accent); }
-  th .arrow { display: inline-block; width: 1em; font-size: 0.75rem; }
-  th.num, td.num { text-align: right; }
-  tbody tr:nth-child(even) { background: var(--row-alt); }
-  tbody tr:hover { background: var(--accent-soft); }
-  td.team { font-weight: 600; }
-  td.best { font-weight: 700; }
-  .na { color: var(--no); font-style: italic; }
-  .pill {
-    display: inline-block;
-    padding: 2px 9px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-  .pill.yes { background: var(--yes-bg); color: var(--yes); }
-  .pill.no { color: var(--no); }
-  .status {
-    padding: 40px 16px;
-    text-align: center;
-    color: var(--muted);
-  }
-  .status.error { color: var(--accent); }
+/* Layout: control deck on top, field map center-left, plan sidebar right; stacks on narrow screens. Single dark "night canopy" look by design. */
+:root{
+  --bg:#0b1a14; --panel:#11261d; --panel-2:#183428; --line:#2a4a3b;
+  --fg:#e9f5ee; --muted:#9fbfae;
+  --glow:#7dffb2; --red:#e0383b; --red-dk:#a71f24; --blue:#2f7ff0; --blue-dk:#1d55a8; --gold:#ffd166;
+  --display:"Chakra Petch","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.45;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 28px}
+button,select{font:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+
+/* ---------- Top deck ---------- */
+.deck{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:stretch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+.brand{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.brand h1{font-family:var(--display);font-weight:700;font-size:1.25rem;margin:0;letter-spacing:.02em;color:var(--glow);text-wrap:balance}
+.brand label[for="team"]{font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+#team{width:100%;font-size:1.15rem;font-weight:800;padding:10px 12px;border-radius:10px;border:2px solid var(--glow);background:var(--panel-2);color:var(--fg)}
+.timer{display:flex;flex-direction:column;align-items:center;gap:8px;padding-inline:22px}
+#clock{font-family:var(--display);font-weight:700;font-size:clamp(3.2rem,8vw,5.4rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.04em;color:var(--fg);text-shadow:0 0 22px rgba(125,255,178,.35)}
+#clock.warn{color:var(--gold)} #clock.done{color:var(--red)}
+.timer-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.btn{border:0;border-radius:10px;padding:9px 16px;font-weight:800;background:var(--panel-2);color:var(--fg);border:1px solid var(--line)}
+.btn:hover{border-color:var(--glow)}
+.btn.endb:not(:disabled){background:var(--gold);border-color:var(--gold);color:#2a1d00}
+.btn.go{background:var(--glow);color:#06281a;border-color:var(--glow);font-size:1.05rem;padding-inline:24px}
+.btn.small{padding:6px 11px;font-size:.85rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.precision{display:flex;align-items:center;gap:14px;justify-content:flex-end}
+#precisionBtn{background:var(--red);color:#fff;border:0;border-radius:14px;font-family:var(--display);font-weight:700;font-size:clamp(1.4rem,3vw,2.1rem);letter-spacing:.08em;padding:18px 26px;box-shadow:0 6px 0 var(--red-dk),0 0 24px rgba(224,56,59,.4);transition:transform .06s}
+#precisionBtn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--red-dk)}
+#precisionBtn:disabled{filter:grayscale(.7);opacity:.6}
+.tokens{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pips{display:flex;gap:5px}
+.pip{width:18px;height:18px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(255,209,102,.6)}
+.pip.lost{background:transparent;border:2px solid var(--line);box-shadow:none}
+.tokens small{color:var(--muted);font-size:.78rem;text-align:center}
+.tokens b{color:var(--fg)}
+
+/* ---------- Main ---------- */
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.mapcard{padding:10px}
+.hint{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between;margin:0 4px 8px}
+#hintText{font-weight:600;color:var(--glow);flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:760px){#hintText{flex-basis:100%;white-space:normal}}
+.map{position:relative;width:100%;max-width:100%;aspect-ratio:3600/2037;border-radius:10px;overflow:hidden;background:#123}
+.map img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-drag:none}
+.map svg{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin:8px 4px 0}
+.tlhead{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin:16px 4px 8px}
+.tlhead h2{font-family:var(--display);font-size:1rem;letter-spacing:.06em;text-transform:uppercase;margin:0;color:var(--muted)}
+.tlhead span{font-size:.8rem;color:var(--muted)}
+.tlwrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+.tlwrap svg{display:block;width:100%;min-width:760px;height:auto}
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:10px}
+.stat{background:var(--panel-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat>span{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.stat>b{font-family:var(--display);font-size:1.7rem;font-variant-numeric:tabular-nums}
+.stat.wide{grid-column:1/-1}
+.stars{font-style:normal;color:var(--gold);font-size:.8em;letter-spacing:.05em;white-space:nowrap}
+.runlist{display:flex;flex-direction:column;gap:6px;margin-top:4px;font-size:.9rem;font-variant-numeric:tabular-nums}
+.runlist strong{color:var(--glow);margin-left:6px}
+.runlist em{color:var(--gold);font-style:normal;font-weight:700}
+@media (max-width:900px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:620px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.legend i{display:inline-block;width:26px;height:5px;border-radius:3px;vertical-align:middle;margin-right:6px}
+
+.side{display:flex;flex-direction:column;gap:14px}
+.side h2{font-family:var(--display);font-size:1rem;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px;color:var(--muted)}
+.big{font-family:var(--display);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums;color:var(--glow)}
+.rows{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-size:.9rem;margin-top:10px}
+.rows .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.rows .sub{color:var(--muted)}
+.rows hr{grid-column:1/-1;border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:420px;overflow:auto}
+.timeline li{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:6px 4px;border-bottom:1px dashed var(--line);font-size:.9rem}
+.timeline .n{font-family:var(--display);font-weight:700;color:var(--muted);text-align:right}
+.timeline .pts{font-weight:800;font-variant-numeric:tabular-nums}
+.timeline .pts.zero{color:var(--muted)}
+.timeline .pts .mt,.adj .mt{display:block;font-size:.72rem;font-weight:600;color:var(--muted);text-align:right}
+.timeline .stop{cursor:pointer}.timeline .stop:hover{background:var(--panel-2)}
+.timeline .try{color:var(--gold);font-weight:700;font-size:.75rem}
+.timeline .run{display:flex;justify-content:space-between;font-family:var(--display);letter-spacing:.06em;font-size:.78rem;text-transform:uppercase;padding-top:10px;border:0}
+.chip{display:inline-block;border-radius:999px;padding:1px 9px;font-size:.75rem;font-weight:800}
+.chip.red{background:var(--red);color:#fff}.chip.blue{background:var(--blue);color:#fff}
+.empty{color:var(--muted);font-size:.9rem}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- Modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(3,10,7,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal{background:var(--panel);border:2px solid var(--glow);border-radius:16px;padding:20px;width:min(560px,100%);max-height:92vh;overflow:auto;box-shadow:0 0 40px rgba(125,255,178,.25)}
+.modal.wide{width:min(860px,100%)}
+.modal h3{font-family:var(--display);font-size:1.5rem;margin:0 0 4px;text-wrap:balance}
+.modal p{margin:0 0 14px;color:var(--muted)}
+.opts{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.opt{min-width:84px;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--panel-2);color:var(--fg);font-family:var(--display);font-weight:700;font-size:1.4rem}
+.opt:hover,.opt.sel{border-color:var(--glow);background:#1d4a35}
+.opt small{display:block;font-family:var(--body);font-size:.72rem;font-weight:600;color:var(--muted)}
+.mfoot{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+.adj{width:100%;border-collapse:collapse;font-size:.92rem}
+.adj th,.adj td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left}
+.adj th{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.adj td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}
+.adj select{background:var(--panel-2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-weight:700}
+.adj tr.changed td{background:rgba(255,209,102,.08)}
+.adj tr.changed select{border-color:var(--gold)}
+.tablewrap{overflow-x:auto;margin-bottom:14px}
+.totals{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+.totals div{display:flex;flex-direction:column}
+.totals span{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.totals b{font-family:var(--display);font-size:2rem;font-variant-numeric:tabular-nums}
+
+/* countdown overlay */
+#count{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(3,10,7,.8);z-index:60;pointer-events:none}
+#count span{font-family:var(--display);font-weight:700;font-size:min(34vw,320px);color:var(--glow);text-shadow:0 0 50px rgba(125,255,178,.7);animation:pop .9s ease-out both}
+#count span.lego{color:var(--gold);font-size:min(22vw,220px)}
+@keyframes pop{from{transform:scale(1.6);opacity:0}30%{opacity:1}to{transform:scale(1);opacity:1}}
+.flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:65;pointer-events:none}
+.flash span{font-family:var(--display);font-weight:700;font-size:min(11vw,120px);color:#fff;padding:.15em .6em;border-radius:24px;border:6px solid #fff;letter-spacing:.04em;animation:flash .9s ease-out both}
+.flash.red span{background:var(--red)}.flash.blue span{background:var(--blue)}
+.flash.start span{background:#1f9d57}.flash.end span{background:#c98a00}
+.flash span small{display:block;font-family:var(--body);font-size:.32em;font-weight:800;letter-spacing:0;text-align:center;margin-top:.1em}
+.switch{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;font-weight:800;font-size:.9rem}
+.switch input{position:absolute;opacity:0;width:1px;height:1px}
+.switch .slider{position:relative;width:46px;height:26px;border-radius:13px;background:var(--line);transition:background .15s;flex:none}
+.switch .slider::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s}
+.switch input:checked + .slider{background:var(--glow)}
+.switch input:checked + .slider::after{transform:translateX(20px)}
+.switch input:focus-visible + .slider{outline:3px solid var(--gold);outline-offset:2px}
+.switch input:disabled + .slider{opacity:.5}
+.switch .swlabel small{display:block;font-weight:600;font-size:.72rem;color:var(--muted)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.srow .sinfo small{display:block;color:var(--muted);font-size:.8rem}
+.srow .opts{margin:0;justify-content:flex-end;gap:6px}
+.srow .opt{min-width:58px;padding:8px 10px;font-size:1.1rem}
+.srow.todo .sinfo b{color:var(--gold)}
+@media (max-width:700px){.srow{grid-template-columns:1fr}.srow .opts{justify-content:flex-start}}
+@keyframes flash{0%{transform:scale(.7);opacity:0}15%{transform:scale(1.05);opacity:1}70%{opacity:1}100%{transform:scale(1);opacity:0}}
+@media (prefers-reduced-motion:reduce){.flash span{animation:none}}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--glow);padding:10px 16px;border-radius:10px;z-index:70;font-weight:600;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){#count span{animation:none}}
+
+/* history */
+.hist{font-size:.85rem;display:flex;flex-direction:column;gap:6px;max-height:220px;overflow:auto}
+.hist div{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.hist small{color:var(--muted);grid-column:1/-1}
+.hist .sent{color:var(--glow)}
+.sheetnote{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.9rem;color:var(--muted)}
+.sheetnote.hs{border-color:var(--gold);background:var(--gold);color:#2a1d00;font-weight:800;font-size:1rem}
+.sheetnote.ok{border-color:var(--glow);color:var(--glow);font-weight:700}
+.sheetnote.bad{border-color:var(--gold);color:var(--fg);background:rgba(255,209,102,.08)}
+.sheetnote code{color:var(--gold)}
+.linkbtn{background:none;border:0;padding:0;color:var(--gold);font-weight:700;text-decoration:underline;font-size:inherit}
+
+/* print report */
+#report{display:none}
+@media (max-width:1100px){.main{grid-template-columns:1fr}.deck{grid-template-columns:1fr 1fr}.timer{grid-column:1/-1;order:-1}.precision{justify-content:center}}
+@media (max-width:620px){.deck{grid-template-columns:1fr}#precisionBtn{width:100%}.precision{flex-direction:column}}
+/* iPad / tablet landscape: one compact control row, and the whole map (with launch arrows) fits on screen without scrolling */
+@media (orientation:landscape) and (min-width:900px) and (max-width:1400px){
+  body{padding-block:10px 20px}
+  .wrap{gap:10px}
+  .deck{grid-template-columns:minmax(0,1fr) auto auto;gap:10px}
+  .card{padding:8px 12px}
+  .brand{gap:4px}
+  .brand h1{font-size:1rem}
+  .brand label[for="team"]{display:none}
+  #team{font-size:1rem;padding:8px 10px}
+  .switch{font-size:.8rem;gap:7px}
+  .switch .swlabel small{display:none}
+  .switch .slider{width:38px;height:22px;border-radius:11px}
+  .switch .slider::after{width:16px;height:16px}
+  .switch input:checked + .slider::after{transform:translateX(16px)}
+  .timer{grid-column:auto;order:0;flex-direction:row;align-items:center;gap:14px;padding-inline:12px}
+  #clock{font-size:3.1rem}
+  .timer-btns{flex-wrap:nowrap;gap:6px}
+  .timer-btns .btn{padding:9px 12px}
+  .btn.go{padding-inline:18px}
+  .precision{justify-content:flex-end;gap:10px}
+  #precisionBtn{font-size:1.3rem;padding:12px 16px;letter-spacing:.06em}
+  .pip{width:14px;height:14px}
+  .tokens small{font-size:.72rem}
+  .main{grid-template-columns:minmax(0,1fr) 270px;gap:10px}
+  .mapcard{padding:8px}
+  .hint{margin:0 2px 6px}
+  #hintText{font-size:.85rem}
+  .hint .btn.small{padding:6px 9px;font-size:.8rem}
+  .map{width:min(100%, calc((100vh - 168px) * 1.767));width:min(100%, calc((100dvh - 168px) * 1.767));margin-inline:auto}
+  .side .card{padding:10px 12px}
+  .timeline{max-height:calc(100dvh - 260px)}
+  .stats{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .flash span{font-size:min(7vw,84px)}
+}
+@media (orientation:landscape) and (min-width:900px) and (max-width:1100px){
+  .main{grid-template-columns:minmax(0,1fr) 232px}
+  .side h2{font-size:.85rem}
+  .timeline li{font-size:.82rem;gap:6px}
+}
+@media print{
+  :root{--bg:#fff;--fg:#000;--muted:#444;--line:#bbb;--panel:#fff}
+  body{background:#fff;color:#000;padding:0}
+  .deck,.side,.hint,.legend,.scrim,#count,.toast,.flash{display:none!important}
+  .main{display:block}.mapcard{border:0;padding:0}
+  #report{display:block;font-family:var(--body);color:#000;page-break-before:always}
+  #report h1{font-family:var(--display);margin:0 0 4px}
+  #report table{width:100%;border-collapse:collapse;font-size:11pt;margin-top:10px}
+  #report th,#report td{border:1px solid #999;padding:4px 6px;text-align:left}
+  #report td.num,#report th.num{text-align:right}
+}
 </style>
 </head>
 <body>
-<header>
-  <div class="wrap">
-    <h1>Qualifier Results</h1>
-    <p class="subtitle">Live from the Qualifier Competition 26 spreadsheet</p>
-    <nav class="tabs" id="tabs"></nav>
-  </div>
-</header>
 
-<main>
-  <div class="wrap">
-    <div class="toolbar">
-      <div>
-        <h2 id="locTitle"></h2>
-        <div class="meta" id="meta"></div>
-      </div>
-      <div class="controls">
-        <input type="search" id="filter" placeholder="Filter teams…" aria-label="Filter teams">
-        <button id="resetSort" title="Sort by Best Score, highest first">Reset sort</button>
-        <button id="refresh" title="Reload data from the spreadsheet">Refresh</button>
+
+
+<div class="wrap">
+  <section class="deck">
+    <div class="card brand">
+      <h1>BioGlow Table Scoring</h1>
+      <label for="team">Team</label>
+      <select id="team"></select>
+      <label class="switch" for="liveToggle"><input type="checkbox" id="liveToggle"><span class="slider"></span>
+        <span class="swlabel" id="liveLabel">Live scoring</span></label>
+    </div>
+    <div class="card timer">
+      <div id="clock" aria-live="polite">2:30</div>
+      <div class="timer-btns">
+        <button class="btn go" id="startBtn">Start</button>
+        <button class="btn endb" id="endBtn" disabled>End</button>
+        <button class="btn" id="resetBtn">Reset</button>
+        <button class="btn" id="scoreBtn">Score Now</button>
       </div>
     </div>
-    <div class="card" id="card"><div class="status">Loading…</div></div>
-  </div>
-</main>
+    <div class="card precision">
+      <button id="precisionBtn" aria-label="Use one precision token">PRECISION</button>
+      <div class="tokens">
+        <div class="pips" id="pips"></div>
+        <small><b id="tokCount">6</b> tokens left = <b id="tokPts">50</b> pts</small>
+        <button class="btn small" id="tokUndo">Undo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="main">
+    <div class="card mapcard">
+      <div class="hint">
+        <span id="hintText"></span>
+        <div class="actions">
+          <button class="btn small" id="undoBtn">Undo last stop</button>
+          <button class="btn small" id="clearBtn">Clear plan</button>
+          <button class="btn small" id="imgBtn">Map image</button>
+          <button class="btn small" id="printBtn">Print report</button>
+        </div>
+      </div>
+      <div class="map" id="map">
+        <img src="map.jpg" alt="BioGlow mission field map" draggable="false">
+        <svg id="svg" viewBox="0 0 3600 2037" preserveAspectRatio="none" aria-label="Clickable mission map"></svg>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--blue)"></i>Launch → mission, mission → mission</span>
+        <span><i style="background:var(--red)"></i>Mission → launch, launch → launch</span>
+        <span>↑ robot leaves a launch area · ↓ robot returns</span>
+      </div>
+      <div class="tlhead"><h2>Match timeline</h2><span>↑ leaves launch · ↓ returns · purple ↓ precision token · line is red/blue in a launch area, green on a run · circles are mission points. Times come from the match clock.</span></div>
+      <div class="tlwrap" id="matchTimeline"></div>
+      <div class="stats" id="runStats"></div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <h2>Route steps</h2><p class="empty" style="margin:-4px 0 8px;font-size:.8rem">Click a mission stop to change its points.</p>
+        <ol class="timeline" id="timeline"></ol>
+      </div>
+      <div class="card">
+        <h2>Saved matches</h2>
+        <div class="hist" id="history"></div>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn small" id="csvBtn">Download CSV</button>
+          <button class="btn small" id="histClear">Clear history</button>
+          <button class="btn small" id="sheetTest">Test Google Sheet</button>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <section id="report"></section>
+</div>
+
+<div id="modalRoot"></div>
 
 <script>
-// ---------- Configuration ----------
-const SHEET_ID = "179x63PbQarpGgOr2qHen6P_zWnaFBZqF89ViIIZjrmA";
+(() => {
+/* ================= DATA ================= */
+const TEAMS = [
+  ["Apex-GPT"],["Automatrons"],["Biobots"],["Canopy Coders"],["Codebreakers"],["Cybertronic"],["Duckzilla"],
+  ["Error 404","Error 404: Chicken Not Found"],["Headless Chickens"],["Legacy Builders"],["MARS Eagles"],["Master KARDS"],
+  ["Phoenix Phorce"],["Roz"],["Short Circuit"],["Solar Stars"],["Terrabyte Titans"],
+  ["Test"]
+].map(([s,f]) => ({short:s, full:f||s}));
 
-const LOCATIONS = [
-  { label: "Arlington Heights", sheet: "AH Qualifiers" },
-  { label: "Batavia",           sheet: "Batavia Qualifiers" },
-  { label: "Buffalo Grove",     sheet: "BG Qualifiers" },
-  { label: "Naperville",        sheet: "Naperville Qualifiers" }
-];
+// Positions are % of the map (taken from the numbered reference map). 8 & 9 swapped per coach request.
+const MISSIONS = {
+  1:{name:"Drone Survey",opts:[20,30],pos:[43.8,92.7]},
+  2:{name:"Exploding Seeds",opts:[10,20,30],pos:[31.7,52.2]},
+  3:{name:"Flip the Rock",opts:[20,30],pos:[4.7,40.9]},
+  4:{name:"Lucky Leaves",opts:[10,30],pos:[7.7,13.3]},
+  5:{name:"Reaching Roots",opts:[10,20],pos:[19.9,7.1]},
+  6:{name:"Leafcutter Frenzy",opts:[10,20,30,40],pos:[75.4,6.9]},
+  7:{name:"Humongous Fungus",opts:[20],pos:[81.6,6.9]},
+  8:{name:"Tangled",opts:[30],pos:[32.8,7.1]},
+  9:{name:"Research Platform",opts:[10,20,30],pos:[26.9,7.1]},
+  11:{name:"Windows to the Past",opts:[20],pos:[69.8,47.3]},
+  12:{name:"Forest Elder",opts:[10,20,30],pos:[95.6,33.2]},
+  13:{name:"Keystone Species",opts:[30]},
+  14:{name:"Seeds of Renewal",opts:[5,10,15,20,25,30,35,40]},
+  15:{name:"Biocentric Architecture",opts:[10,20,30,40]},
+};
+const ORDER = [1,2,3,4,5,6,7,8,9,11,12,13,14,15];
+const BOXES = {A:[94.2,10.1], B:[49.5,45.0], C:[64.0,91.7]};
+const M10 = [[38.9,10.4],[54.4,32.6]];
+const PREC = [0,10,15,25,35,50,50];
 
-// Columns shown, in display order. "type" controls how sorting works.
-const COLUMNS = [
-  { key: "Team Name",        type: "text" },
-  { key: "Qualifier",        type: "text" },
-  { key: "Rank",             type: "rank",    num: true },
-  { key: "Advance",          type: "advance" },
-  { key: "Best Score",       type: "number",  num: true, cls: "best" },
-  { key: "Round 1",          type: "number",  num: true },
-  { key: "Round 2",          type: "number",  num: true },
-  { key: "Round 3",          type: "number",  num: true },
-  { key: "Number of Awards", type: "number",  num: true },
-  { key: "Award",            type: "text",    cls: "award" }
-];
+// Google Sheet: paste the Apps Script web app URL here (see README). Leave "" to turn sending off.
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbzI-WAcKQPZHMcaDgR117y2zmgW10T-AFU-_Qkr0ryUofMu3EmI5KWsAbKd710orhTc/exec";
+const LAUNCH = {
+  red:{c:[0,2037],a:[330,1590],up:[172,1330],down:[500,1330],label:"Red",col:"#e0383b"},
+  blue:{c:[3600,2037],a:[3270,1590],up:[3100,1330],down:[3428,1330],label:"Blue",col:"#2f7ff0"}};
+const LAUNCH_R = 865, HIT_R = 95, BTN = 152, MATCH = 150, GREEN = "#3ccf6e", PURPLE = "#a05cff";
+const XY = p => [p[0]*36, p[1]*20.37];
 
-const DEFAULT_SORT = { key: "Best Score", dir: "desc" };
+/* ================= STATE ================= */
+// steps: {type:"out"|"in", side, t} and {type:"mission", id, points, box, t}; prec: match times a token was used
+const blank = () => ({v:2, team:0, live:true, steps:[], boxes:{A:null,B:null,C:null}, prec:[]});
+let S = load("fll-state");
+if(!S || S.v!==2) S = Object.assign(blank(), {team: S && S.team || 0});
+let history = load("fll-history") || [];
+function load(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+function save(){ try{ localStorage.setItem("fll-state", JSON.stringify(S)); localStorage.setItem("fll-history", JSON.stringify(history)); }catch(e){} }
 
-// ---------- State ----------
-const cache = {};          // sheet name -> rows
-let current = LOCATIONS[0];
-let sort = { ...DEFAULT_SORT };
-let filterText = "";
+if(S.live === undefined) S.live = true;
+const $ = id => document.getElementById(id);
+// After-run scoring: a mission step with no end time yet is the one in progress
+const openMission = () => S.steps.find(s => s.type==="mission" && s.ts===null);
+const closeOpen = t => { const o = openMission(); if(o) o.ts = Math.max(o.t, t); return o; };
+const team = () => TEAMS[S.team] || TEAMS[0];
+const tokens = () => Math.max(0, 6 - S.prec.length);
+const planned = () => { const p={}; S.steps.forEach(s => { if(s.type==="mission") p[s.id]=Math.max(p[s.id]??0, s.points||0); }); return p; };
+const attempts = id => S.steps.filter(s=>s.type==="mission"&&s.id===id);
+// Time on a mission = from clicking the mission to clicking its score, added up over every attempt.
+const stepTime = s => Math.max(0, (s.ts ?? s.t) - s.t);
+const missionTime = id => { const a = attempts(id); return a.length ? a.reduce((sum,s)=>sum+stepTime(s),0) : null; };
+const missionPos = id => { if(MISSIONS[id].pos) return XY(MISSIONS[id].pos); const b = Object.keys(S.boxes).find(k=>S.boxes[k]===id); return b ? XY(BOXES[b]) : null; };
+const stepPos = s => s.type==="mission" ? missionPos(s.id) : LAUNCH[s.side].a;
+const mLabel = id => `M${String(id).padStart(2,"0")} ${MISSIONS[id].name}`;
+const lastLaunch = () => [...S.steps].reverse().find(s=>s.type!=="mission");
+const robotOut = () => { const l = lastLaunch(); return !!l && l.type==="out"; };
+const fmt = s => { s = Math.max(0, Math.round(s)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
 
-// ---------- CSV parsing ----------
-function parseCSV(text) {
-  const rows = [];
-  let row = [], field = "", inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuotes = false;
-      } else field += c;
-    } else if (c === '"') inQuotes = true;
-    else if (c === ",") { row.push(field); field = ""; }
-    else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field); rows.push(row); row = []; field = "";
-    } else field += c;
+/* ================= TEAM ================= */
+$("team").innerHTML = TEAMS.map((t,i)=>`<option value="${i}">${t.short}</option>`).join("");
+$("team").value = S.team;
+$("team").onchange = e => { S.team = +e.target.value; save(); render(); };
+$("liveToggle").checked = S.live;
+$("liveToggle").onchange = e => {
+  if(running || counting){ e.target.checked = S.live; return toast("Switch scoring modes before the match starts or after it ends."); }
+  S.live = e.target.checked; commit();
+  toast(S.live ? "Live scoring: pick the points for each mission as you go."
+               : "After-run scoring: click a mission to start it and again to end it. You'll score them all when the match is over.");
+};
+
+/* ================= MAP ================= */
+const svg = $("svg");
+svg.addEventListener("click", e => {
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const d = (a) => Math.hypot(p.x-a[0], (p.y-a[1]));
+  const inBtn = a => Math.abs(p.x-a[0]) < BTN && Math.abs(p.y-a[1]) < BTN;
+  for(const side of ["red","blue"]){
+    if(inBtn(LAUNCH[side].up)) return clickUp(side);
+    if(inBtn(LAUNCH[side].down)) return clickDown(side);
   }
-  if (field !== "" || row.length) { row.push(field); rows.push(row); }
-  return rows;
+  for(const k of Object.keys(BOXES)) if(d(XY(BOXES[k])) < HIT_R) return clickBox(k);
+  for(const id of ORDER) if(MISSIONS[id].pos && d(XY(MISSIONS[id].pos)) < HIT_R) return clickMission(+id);
+  for(const m of M10) if(d(XY(m)) < HIT_R) return toast("Mission 10 Fragile Microhabitats: don't disturb it! You keep 20 points if it stays safe.");
+  for(const side of ["red","blue"]) if(d(LAUNCH[side].c) < LAUNCH_R) return toast(`Use the ↑ arrow when the robot leaves ${LAUNCH[side].label} launch, and the ↓ arrow when it comes back.`);
+});
+
+function clickUp(side){
+  const L = LAUNCH[side].label, t = elapsed();
+  if(robotOut()) return toast(`The robot is already out. Click a ↓ arrow when it comes back to a launch area.`);
+  S.steps.push({type:"out",side,t}); commit(); flash(side, `${L.toUpperCase()} LAUNCH ↑`);
+}
+function clickDown(side){
+  const t = elapsed();
+  if(!robotOut()) return toast(S.steps.length ? "The robot is already in a launch area. Click a ↑ arrow when it leaves." : "First click a ↑ arrow when the robot leaves a launch area.");
+  closeOpen(t); S.steps.push({type:"in",side,t}); commit(); toast(`${LAUNCH[side].label} ↓ robot returns at ${fmt(t)}`);
 }
 
-const norm = s => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+function needOut(){
+  if(robotOut()) return false;
+  toast(S.steps.length ? "The robot is in a launch area. Click a ↑ arrow when it leaves." : "First click a ↑ arrow in the red or blue launch area when the robot leaves.");
+  return true;
+}
 
-async function loadSheet(sheetName, force = false) {
-  if (cache[sheetName] && !force) return cache[sheetName];
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&headers=1` +
-              `&sheet=${encodeURIComponent(sheetName)}&_=${Date.now()}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const grid = parseCSV(await res.text());
-  if (!grid.length) return (cache[sheetName] = []);
+function clickMission(id, box, t){
+  if(t === undefined){ if(needOut()) return; t = elapsed(); }
+  if(!S.live) return clickMissionAfter(id, box, t);
+  askPoints(id, pts => { S.steps.push({type:"mission",id,points:pts,box,t,ts:elapsed()}); commit(); }, box);
+}
 
-  // Map our column names to the sheet's header positions (case/space-insensitive)
-  const headers = grid[0].map(norm);
-  const index = {};
-  COLUMNS.forEach(col => { index[col.key] = headers.indexOf(norm(col.key)); });
+// After-run scoring: first click starts a mission, the next click on it ends it. Points are chosen after the match.
+// Starting a different mission (or a ↓ arrow / precision token) ends the one in progress.
+function clickMissionAfter(id, box, t){
+  const open = openMission();
+  if(open && open.id===id){ open.ts = Math.max(open.t, t); commit(); flash("end", `MISSION ENDED<small>${mLabel(id)} · ${dur(open.ts-open.t)}</small>`); return; }
+  if(open) open.ts = Math.max(open.t, t);
+  if(box) S.boxes[box] = id;
+  S.steps.push({type:"mission", id, points:null, box, t, ts:null}); commit();
+  flash("start", `MISSION STARTED<small>${mLabel(id)}</small>`);
+}
 
-  const rows = grid.slice(1)
-    .map(r => {
-      const obj = {};
-      COLUMNS.forEach(col => {
-        const i = index[col.key];
-        obj[col.key] = i >= 0 ? String(r[i] ?? "").trim() : "";
+function askPoints(id, done, box, editIdx){
+  const o = [0, ...MISSIONS[id].opts];
+  const prev = attempts(id).filter(s => S.steps.indexOf(s) !== editIdx);
+  const n = editIdx !== undefined ? attempts(id).indexOf(S.steps[editIdx]) + 1 : prev.length + 1;
+  const note = prev.length ? `This is attempt ${n}. Other attempts: ${prev.map(s=>s.points).join(", ")} pts. The mission only counts once, so your best attempt is what scores.` : `Choose 0 if the robot is only passing through or setting up.`;
+  modal(`<h3>${mLabel(id)}${n>1?` · attempt ${n}`:""}</h3><p>How many points do you plan to earn on this visit? ${note}</p>
+    <div class="opts">${o.map(v=>`<button class="opt ${editIdx!==undefined&&S.steps[editIdx].points===v?"sel":""}" data-v="${v}">${v}<small>${v===0?"no points":"points"}</small></button>`).join("")}</div>
+    <div class="mfoot"><button class="btn" data-x>Cancel</button></div>`,
+    m => m.querySelectorAll("[data-v]").forEach(b => b.onclick = () => {
+      if(box) S.boxes[box] = id;
+      close(); done(+b.dataset.v);
+    }));
+}
+
+function clickBox(k){
+  if(needOut()) return;
+  const t = elapsed();
+  if(S.boxes[k]) return clickMission(S.boxes[k], k, t);
+  const free = [13,14,15].filter(id => !Object.values(S.boxes).includes(id));
+  modal(`<h3>Which mission goes in this white box?</h3><p>Missions 13, 14 and 15 can go in any white box.</p>
+    <div class="opts">${free.map(id=>`<button class="opt" data-m="${id}">${id}<small>${MISSIONS[id].name}</small></button>`).join("")}</div>
+    <div class="mfoot"><button class="btn" data-x>Cancel</button></div>`,
+    m => m.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { close(); clickMission(+b.dataset.m, k, t); }));
+}
+
+$("undoBtn").onclick = () => {
+  const s = S.steps.pop(); if(!s) return;
+  if(s.prec){ const k = S.prec.lastIndexOf(s.t); if(k>=0) S.prec.splice(k,1); }
+  if(s.box && !S.steps.some(x=>x.type==="mission"&&x.id===s.id)) S.boxes[s.box] = null;
+  commit();
+};
+$("clearBtn").onclick = () => modal(`<h3>Clear the whole plan?</h3><p>The route, timeline, precision tokens and white-box choices will be removed for ${esc(team().full)}.</p>
+  <div class="mfoot"><button class="btn" data-x>Cancel</button><button class="btn red" data-ok>Clear plan</button></div>`,
+  m => m.querySelector("[data-ok]").onclick = () => { S.steps=[]; S.boxes={A:null,B:null,C:null}; S.prec=[]; close(); commit(); });
+
+function commit(){ save(); render(); }
+
+/* ================= RENDER ================= */
+const arrowPath = (up, s=1) => up
+  ? `M0 ${-52*s}L${44*s} ${0}L${16*s} ${0}L${16*s} ${48*s}L${-16*s} ${48*s}L${-16*s} 0L${-44*s} 0Z`
+  : `M0 ${52*s}L${44*s} 0L${16*s} 0L${16*s} ${-48*s}L${-16*s} ${-48*s}L${-16*s} 0L${-44*s} 0Z`;
+
+function drawMap(){
+  const p = planned(), out = robotOut();
+  let h = `<defs>
+    <marker id="ab" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="#2f7ff0"/></marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0L10 5L0 10z" fill="#e0383b"/></marker>
+    <filter id="gl"><feGaussianBlur stdDeviation="10"/></filter></defs>`;
+  // launch areas + arrow buttons
+  ["red","blue"].forEach(side => {
+    const L = LAUNCH[side], used = S.steps.some(s=>s.type!=="mission"&&s.side===side);
+    h += `<path d="M${L.c[0]} ${2037-LAUNCH_R} A${LAUNCH_R} ${LAUNCH_R} 0 0 ${side==="red"?1:0} ${side==="red"?LAUNCH_R:3600-LAUNCH_R} 2037 L${L.c[0]} 2037Z"
+      fill="${L.col}" fill-opacity="${used?0.16:0.05}" stroke="none"/>`;
+    [["up",true,!out],["down",false,out]].forEach(([k,up,on]) => {
+      const [x,y] = L[k];
+      h += `<g transform="translate(${x} ${y})" opacity="${on?1:.4}" style="cursor:pointer">
+        <rect x="-${BTN-8}" y="-${BTN-8}" width="${2*BTN-16}" height="${2*BTN-16}" rx="40" fill="${L.col}" stroke="#fff" stroke-width="12"/>
+        <path d="${arrowPath(up,2.05)}" fill="#fff"/>
+        <title>${L.label} launch: ${up?"robot leaves (↑)":"robot returns (↓)"}</title></g>`;
+    });
+  });
+  // planned-mission glow rings
+  const om = openMission();
+  Object.keys(p).forEach(id => { const c = missionPos(+id); if(!c) return; const col = om && om.id===+id ? "#ffd166" : "#7dffb2";
+    h += `<circle cx="${c[0]}" cy="${c[1]}" r="100" fill="none" stroke="${col}" stroke-width="16" filter="url(#gl)"/><circle cx="${c[0]}" cy="${c[1]}" r="100" fill="none" stroke="${col}" stroke-width="7"/>`; });
+  // route segments
+  const seen = {}; let n = 0;
+  for(let i=1;i<S.steps.length;i++){
+    const A = S.steps[i-1], Bs = S.steps[i];
+    if(A.type!=="mission" && Bs.type!=="mission" && A.side===Bs.side) continue; // stayed in the same launch area
+    const a = stepPos(A), b = stepPos(Bs); if(!a||!b || (a[0]===b[0] && a[1]===b[1])) continue; // repeat attempt at the same mission
+    const red = Bs.type==="in" || (A.type!=="mission" && Bs.type!=="mission");
+    const key = [a,b].map(String).sort().join("|"); const k = seen[key] = (seen[key]||0)+1;
+    const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+    const off = (k-1)*34*(k%2?1:-1); const ox=-uy*off, oy=ux*off;
+    const sa = A.type==="mission"?105:40, sb = Bs.type==="mission"?118:40;
+    const x1=a[0]+ux*sa+ox, y1=a[1]+uy*sa+oy, x2=b[0]-ux*sb+ox, y2=b[1]-uy*sb+oy;
+    const col = red?"#e0383b":"#2f7ff0"; n++;
+    h += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#fff" stroke-width="26" stroke-linecap="round" opacity=".85"/>
+      <line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="15" stroke-linecap="round" marker-end="url(#${red?"ar":"ab"})"/>`;
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    h += `<g transform="translate(${mx} ${my})"><circle r="34" fill="${col}" stroke="#fff" stroke-width="6"/><text y="13" text-anchor="middle" font-size="38" font-weight="800" fill="#fff" font-family="Chakra Petch,Arial,sans-serif">${n}</text></g>`;
+  }
+  // white box labels
+  Object.entries(S.boxes).forEach(([k,id]) => { if(!id) return; const c = XY(BOXES[k]);
+    h += `<text x="${c[0]}" y="${c[1]+38}" text-anchor="middle" font-size="108" font-weight="700" fill="#c4262b" font-family="Chakra Petch,Arial,sans-serif">${id}</text>`; });
+  // point chips
+  Object.entries(p).forEach(([id,pts]) => { const c = missionPos(+id); if(!c) return;
+    if(attempts(+id).every(s => s.points==null)) pts = "?";
+    const y = c[1] > 1600 ? c[1]-170 : c[1]+150, x = Math.min(Math.max(c[0],95),3505);
+    h += `<g transform="translate(${x} ${y})"><rect x="-88" y="-44" width="176" height="80" rx="40" fill="#0b1a14" stroke="#7dffb2" stroke-width="6"/><text y="16" text-anchor="middle" font-size="50" font-weight="800" fill="#7dffb2" font-family="Chakra Petch,Arial,sans-serif">${pts==="?" ? "?" : "+"+pts}</text></g>`; });
+  // invisible hover titles
+  ORDER.forEach(id => { if(!MISSIONS[id].pos) return; const c = XY(MISSIONS[id].pos);
+    h += `<circle cx="${c[0]}" cy="${c[1]}" r="${HIT_R}" fill="transparent" style="cursor:pointer"><title>${mLabel(id)}</title></circle>`; });
+  Object.keys(BOXES).forEach(k => { const c = XY(BOXES[k]);
+    h += `<circle cx="${c[0]}" cy="${c[1]}" r="${HIT_R}" fill="transparent" style="cursor:pointer"><title>${S.boxes[k]?mLabel(S.boxes[k]):"White box: choose Mission 13, 14 or 15"}</title></circle>`; });
+  M10.forEach(m => { const c = XY(m); h += `<circle cx="${c[0]}" cy="${c[1]}" r="${HIT_R}" fill="transparent"><title>M10 Fragile Microhabitats (avoid)</title></circle>`; });
+  svg.innerHTML = h;
+}
+
+/* Match timeline: one line from 0:00 to 2:30. Arrow tips touch the line; mission circles sit on it. */
+function timelineSVG(W=3600){
+  const X0 = 140, X1 = W-140, xs = t => X0 + (Math.min(Math.max(t||0,0),MATCH)/MATCH)*(X1-X0);
+  const F = "Chakra Petch, Arial, sans-serif";
+  const LY = 230, H = 540, R = 46, AL = 120; // line y, height, circle radius, arrow length
+  // arrow whose tip sits on the line: dir -1 = points up (drawn below line), +1 = points down (drawn above line)
+  const arrow = (x, dir, col) => {
+    const tip = LY, base = LY - dir*AL, head = LY - dir*52;
+    return `<path d="M${x} ${tip}L${x+40} ${head}L${x+15} ${head}L${x+15} ${base}L${x-15} ${base}L${x-15} ${head}L${x-40} ${head}Z"
+      fill="${col}" stroke="#fff" stroke-width="5" stroke-linejoin="round"/>`;
+  };
+  let g = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
+    <rect width="${W}" height="${H}" fill="#0b1a14"/>`;
+  for(let t=0;t<=MATCH;t+=15){ const x = xs(t);
+    g += `<line x1="${x}" y1="${LY-150}" x2="${x}" y2="${LY+150}" stroke="#1f3a2d" stroke-width="3"/>
+      <line x1="${x}" y1="${LY-18}" x2="${x}" y2="${LY+18}" stroke="#9fbfae" stroke-width="5"/>
+      <text x="${x}" y="${H-40}" text-anchor="middle" font-family="${F}" font-size="46" font-weight="700" fill="#9fbfae">${fmt(t)}</text>`; }
+  // line color shows where the robot is: red/blue while in that launch area, green while out on a run, grey for time not yet played
+  g += `<line x1="${X0}" y1="${LY}" x2="${X1}" y2="${LY}" stroke="#3a5548" stroke-width="16" stroke-linecap="round"/>`;
+  const ls = S.steps.filter(s=>s.type!=="mission");
+  if(ls.length){
+    const endT = Math.max(elapsed(), ls[ls.length-1].t), segs = [];
+    let from = 0, col = LAUNCH[ls[0].side].col; // before the first ↑ the robot waits in its starting launch area
+    ls.forEach(s => { segs.push([from, s.t, col]); from = s.t; col = s.type==="out" ? GREEN : LAUNCH[s.side].col; });
+    segs.push([from, endT, col]);
+    segs.forEach(([a,b,c]) => { if(b>a) g += `<line x1="${xs(a)}" y1="${LY}" x2="${xs(b)}" y2="${LY}" stroke="${c}" stroke-width="16"/>`; });
+  }
+  // missions: circles centered on the line, mission number underneath
+  // when circles are close together, the mission labels drop to a second row so they stay readable
+  const ms = S.steps.filter(s=>s.type==="mission").map(s=>({s, x:xs(s.t)})).sort((a,b)=>a.x-b.x), rowEnd = [];
+  ms.forEach(m => { let r = rowEnd.findIndex(e => m.x - e >= 100); if(r<0){ r = rowEnd.length; rowEnd.push(0); } rowEnd[r] = m.x; m.row = r; });
+  ms.forEach(({s,x,row}) => { const on = s.points>0;
+    const label = s.points==null ? "?" : s.points;
+    g += `<circle cx="${x}" cy="${LY}" r="${R}" fill="${on?"#7dffb2":"#2a4a3b"}" stroke="#fff" stroke-width="6"/>
+      <text x="${x}" y="${LY+16}" text-anchor="middle" font-family="${F}" font-size="44" font-weight="700" fill="${on?"#06281a":"#e9f5ee"}">${label}</text>
+      ${row ? `<line x1="${x}" y1="${LY+R+4}" x2="${x}" y2="${LY+R+50+row*44-34}" stroke="#9fbfae" stroke-width="3"/>` : ""}
+      <text x="${x}" y="${LY+R+50+row*44}" text-anchor="middle" font-family="${F}" font-size="38" font-weight="700" fill="#e9f5ee">M${String(s.id).padStart(2,"0")}</text>`; });
+  // launch arrows: leaving = up arrow below the line, returning = down arrow above the line
+  S.steps.filter(s=>s.type!=="mission" && !s.prec).forEach(s => { g += arrow(xs(s.t), s.type==="out" ? -1 : 1, LAUNCH[s.side].col); });
+  // precision tokens: green down arrows above the line
+  S.prec.forEach(t => { g += arrow(xs(t), 1, PURPLE); });
+  return {svg: g + `</svg>`, W, H};
+}
+
+/* Run statistics. A run = ↑ to the next ↓. Time in launch = ↓ to the next ↑.
+   Points per run count only what each run adds to a mission's best score, so the runs add up to the mission total. */
+function runStats(){
+  const runs = [], gaps = [], best = {}; let cur = null, lastIn = null;
+  S.steps.forEach(s => {
+    if(s.type==="out"){ if(lastIn) gaps.push(Math.max(0, s.t - lastIn.t)); cur = {side:s.side, start:s.t, end:null, endSide:null, pts:0}; runs.push(cur); }
+    else if(s.type==="in"){ if(cur){ cur.end = s.t; cur.endSide = s.side; cur = null; } lastIn = s; }
+    else if(cur){ const before = best[s.id]||0; best[s.id] = Math.max(before, s.points||0); cur.pts += best[s.id] - before; }
+  });
+  const now = elapsed();
+  runs.forEach(r => { r.open = r.end===null; r.len = Math.max(0, (r.open ? now : r.end) - r.start); });
+  const inLaunch = gaps.reduce((a,b)=>a+b,0), inRuns = runs.reduce((a,r)=>a+r.len,0);
+  // unused time = what was left on the clock when End was pressed (0 if the clock ran out)
+  const done = ended || remainMs<=0, unused = done ? Math.max(0, Math.ceil(remainMs/1000)) : null; // matches what the clock shows
+  return {runs, gaps, inLaunch, inRuns, avgLaunch: gaps.length ? inLaunch/gaps.length : 0, unused};
+}
+// amounts of time: under a minute shows as seconds ("42 sec"), otherwise m:ss
+const dur = s => (s = Math.max(0, Math.round(s))) < 60 ? `${s} sec` : fmt(s);
+// Stars for a quick average launch time (using the rounded seconds that are shown): under 10 = 1, under 8 = 2, under 6 = 3, under 5 = 4
+const launchStars = st => { if(!st.gaps.length) return 0; const a = Math.round(st.avgLaunch); return a<5 ? 4 : a<6 ? 3 : a<8 ? 2 : a<10 ? 1 : 0; };
+const statTiles = st => [
+  ["Number of runs", String(st.runs.length)],
+  ["Average launch time", st.gaps.length ? dur(st.avgLaunch) : "–"],
+  ["Time in launch", dur(st.inLaunch)],
+  ["Time in runs", dur(st.inRuns)],
+  ["Unused time", st.unused===null ? "–" : dur(st.unused)]];
+function renderStats(){
+  const st = runStats();
+  const stars = launchStars(st);
+  $("runStats").innerHTML = statTiles(st).map(([l,v],i) => `<div class="stat"><span>${l}</span><b>${v}${i===1 && stars ? ` <i class="stars" title="${stars} star${stars>1?"s":""}">${"★".repeat(stars)}</i>` : ""}</b></div>`).join("") + `
+    <div class="stat wide"><span>Points per run</span><div class="runlist">${st.runs.length ? st.runs.map((r,i)=>
+      `<div><b>Run ${i+1}</b> <span class="chip ${r.side}">${LAUNCH[r.side].label} ↑ ${fmt(r.start)}</span> → ${r.open ? `<em>still out</em>` : `<span class="chip ${r.endSide}">${LAUNCH[r.endSide].label} ↓ ${fmt(r.end)}</span>`} · ${dur(r.len)} <strong>${r.pts} pts</strong></div>`).join("")
+      : `<div class="empty">Runs appear here once the robot leaves a launch area.</div>`}</div></div>`;
+}
+
+function render(){
+  // route steps list
+  let run=0, html="";
+  S.steps.forEach((s,i) => {
+    if(s.type==="out"){ run++; html += `<li class="run"><span>${fmt(s.t)} · Run ${run}</span><span class="chip ${s.side}">↑ leaves ${LAUNCH[s.side].label}</span></li>`; }
+    else if(s.type==="in"){ html += `<li class="run"><span>${fmt(s.t)}</span><span class="chip ${s.side}">↓ back to ${LAUNCH[s.side].label}</span></li>`; }
+    else { const at = attempts(s.id), k = at.indexOf(s)+1;
+      html += `<li class="stop" data-i="${i}" title="Click to change points"><span class="n">${fmt(s.t)}</span><span>${mLabel(s.id)}${at.length>1?` <small class="try">try ${k}</small>`:""}</span><span class="pts ${s.points?"":"zero"}">${s.points==null ? (s.ts===null ? "in progress" : "—") : s.points ? "+"+s.points : "0"}<small class="mt">${s.ts===null ? "" : dur(stepTime(s))}</small></span></li>`; }
+  });
+  $("timeline").innerHTML = html || `<li class="empty">Your route will appear here, stop by stop.</li>`;
+  $("timeline").querySelectorAll(".stop").forEach(li => li.onclick = () => { const i=+li.dataset.i, s=S.steps[i];
+    askPoints(s.id, pts => { s.points = pts; commit(); }, undefined, i); });
+  // match timeline graphic
+  $("matchTimeline").innerHTML = timelineSVG().svg;
+  renderStats();
+  // tokens
+  const tk = tokens();
+  $("pips").innerHTML = Array.from({length:6},(_,i)=>`<span class="pip ${i<tk?"":"lost"}"></span>`).join("");
+  $("tokCount").textContent = tk; $("tokPts").textContent = PREC[tk];
+  $("precisionBtn").disabled = tk<=0; $("tokUndo").disabled = !S.prec.length;
+  // hint
+  const last = S.steps[S.steps.length-1];
+  $("liveToggle").checked = S.live; $("liveToggle").disabled = running || counting;
+  $("liveLabel").innerHTML = S.live ? "Live scoring<small>Score each mission as you click it</small>" : "Live scoring off<small>Score all missions after the match</small>";
+  const om = openMission();
+  if(!S.live && om){ $("hintText").textContent = `${mLabel(om.id)} in progress. Click it again when it's done.`; }
+  else $("hintText").textContent = !last ? "Click a ↑ arrow in the red or blue launch area when the robot leaves." :
+    last.type==="out" ? `Robot left ${LAUNCH[last.side].label} launch. Click each mission as the robot reaches it.` :
+    last.type==="in" ? `Robot is back in ${LAUNCH[last.side].label} launch. Click a ↑ arrow when it leaves again.` :
+    S.live ? `Last stop: ${mLabel(last.id)}. Click the next mission, or a ↓ arrow when the robot returns.`
+           : `Click a mission to start it, or a ↓ arrow when the robot returns.`;
+  drawMap(); renderHistory(); renderReport();
+}
+
+/* ================= PRECISION ================= */
+// Using a precision token means the robot was picked up, so it goes back to the launch area it left from.
+$("precisionBtn").onclick = () => {
+  if(tokens()<=0) return;
+  const t = elapsed(); S.prec.push(t); beep(220,.25,"sawtooth",.5);
+  if(robotOut()){ closeOpen(t); const side = lastLaunch().side; S.steps.push({type:"in", side, t, prec:true});
+    toast(`Precision token used. Robot returned to ${LAUNCH[side].label} launch at ${fmt(t)}.`); }
+  else toast(`Precision token used at ${fmt(t)}.`);
+  commit();
+};
+$("tokUndo").onclick = () => {
+  if(!S.prec.length) return;
+  const t = S.prec.pop(), last = S.steps[S.steps.length-1];
+  if(last && last.prec && last.t===t) S.steps.pop();
+  commit();
+};
+
+/* ================= TIMER ================= */
+let remainMs = MATCH*1000, endAt = 0, tick = null, counting = false, running = false, ended = false;
+const elapsed = () => Math.round(Math.min(MATCH, MATCH - (running ? Math.max(0,endAt-Date.now()) : remainMs)/1000)*10)/10;
+function showClock(){ const r = Math.ceil(remainMs/1000), c=$("clock"); c.textContent = fmt(r); c.className = (r===0||ended)?"done":r<=30?"warn":""; }
+let AC;
+function beep(f,d,type="square",vol=.9){ try{ AC = AC || new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume();
+  const o=AC.createOscillator(), g=AC.createGain(); o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol,AC.currentTime); g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+d); }catch(e){} }
+function utter(t){ const u = new SpeechSynthesisUtterance(t); u.volume=1; u.rate=1; u.pitch=.85;
+  const v = speechSynthesis.getVoices().find(v=>/en[-_]US/i.test(v.lang)); if(v) u.voice=v; return u; }
+function say(t){ try{ speechSynthesis.speak(utter(t)); }catch(e){} }
+// Speaks t and calls onStart when the voice actually starts (or after a short fallback if the browser never reports it).
+// Returns how long the browser took to start talking, so the next word can be queued that much earlier.
+function speakSynced(t, onStart){
+  const asked = performance.now(); let fired = false;
+  const go = () => { if(fired) return; fired = true; onStart(performance.now() - asked); };
+  try{ const u = utter(t); u.onstart = go; speechSynthesis.speak(u); }catch(e){}
+  setTimeout(go, 600);
+}
+
+$("startBtn").onclick = () => {
+  if(counting||running) return;
+  if(!S.steps.length && !S.prec.length) return beginCountdown();
+  modal(`<h3>Reset the plan for this match?</h3><p>${esc(team().full)} has a route${S.prec.length ? " and used precision tokens" : ""} from before. Reset clears the route, timeline, precision tokens and white-box choices so this match starts fresh.</p>
+    <div class="mfoot"><button class="btn" data-x>Cancel</button><button class="btn" data-keep>Keep plan &amp; start</button><button class="btn go" data-ok>Reset &amp; start</button></div>`, m => {
+      m.querySelector("[data-keep]").onclick = () => { close(); beginCountdown(); };
+      m.querySelector("[data-ok]").onclick = () => { S.steps=[]; S.boxes={A:null,B:null,C:null}; S.prec=[]; commit(); close(); beginCountdown(); };
+    });
+};
+function beginCountdown(){
+  if(counting||running) return;
+  if(ended || remainMs<=0){ remainMs = MATCH*1000; ended = false; showClock(); }
+  counting = true; $("startBtn").disabled = true;
+  const ov = document.createElement("div"); ov.id="count"; document.body.appendChild(ov);
+  const words = ["3","2","1","LEGO!"];
+  // Each number appears the moment its word is heard; the next word is queued early by the measured speech delay.
+  const step = i => speakSynced(words[i], lag => {
+    ov.innerHTML = `<span class="${i===3?"lego":""}">${words[i]}</span>`;
+    if(i<3) setTimeout(() => step(i+1), Math.max(400, 1000 - Math.min(lag, 600)));
+    else { counting = false; run(); setTimeout(() => ov.remove(), 900); }   // clock starts on "LEGO!"
+  });
+  // Wake up the speech engine silently first, so "3" isn't delayed.
+  try{ speechSynthesis.cancel(); const w = utter(" "); w.volume = 0; speechSynthesis.speak(w); }catch(e){}
+  setTimeout(() => step(0), 250);
+};
+function run(){
+  running = true; $("endBtn").disabled=false; $("startBtn").disabled=true;
+  endAt = Date.now() + remainMs; let lastSec = Math.ceil(remainMs/1000);
+  tick = setInterval(() => {
+    remainMs = Math.max(0, endAt-Date.now()); const sec = Math.ceil(remainMs/1000);
+    if(sec!==lastSec){ lastSec=sec; showClock(); }
+    if(remainMs===0){ stop(); ended = true; showClock(); renderStats(); beep(180,.6,"sawtooth"); say("Time!"); setTimeout(openScoring, 900); }
+  }, 100);
+}
+function stop(){ if(running) remainMs = Math.max(0, endAt-Date.now()); clearInterval(tick); running=false; $("endBtn").disabled = true; $("startBtn").disabled=false; }
+// End finishes the match early: the clock stops where it is and the score screen opens.
+function endMatch(){ if(!running) return; stop(); ended = true; showClock(); renderStats(); beep(180,.6,"sawtooth"); say("Match over"); setTimeout(openScoring, 700); }
+$("endBtn").onclick = endMatch;
+$("resetBtn").onclick = () => { stop(); ended = false; remainMs=MATCH*1000; showClock(); renderStats(); };
+$("scoreBtn").onclick = () => { if(running) endMatch(); else openScoring(); };
+function openScoring(){ if(S.live) openAdjust(); else openAfterScoring(); }
+
+/* ================= ADJUSTMENTS ================= */
+let lastResult = null;
+function openAdjust(){
+  const p = planned();
+  const rows = ORDER.map(id => ({key:"m"+id, label:mLabel(id), plan:p[id]||0, opts:[0,...MISSIONS[id].opts], time:missionTime(id), tries:attempts(id).length}));
+  rows.push({key:"prec", label:"Precision tokens remaining", plan:50, isTok:true, opts:[0,1,2,3,4,5,6], def:tokens()});
+  rows.push({key:"insp", label:"Equipment inspection", plan:20, opts:[0,20]});
+  rows.push({key:"m10", label:"M10 Fragile Microhabitats", plan:20, opts:[20,10,0], names:{20:"No damage (20)",10:"Reduced by 10 (10)",0:"Reduced by 20 (0)"}});
+  const sel = r => `<select id="adj-${r.key}" data-k="${r.key}">${r.opts.map(v=>{
+    const d = r.isTok ? r.def : (r.plan);
+    const txt = r.isTok ? `${v} left → ${PREC[v]} pts` : r.names ? r.names[v] : v;
+    return `<option value="${v}" ${v===d?"selected":""}>${txt}</option>`;}).join("")}</select>`;
+  modal(`<h3>Time! Do you need to make any score adjustments?</h3>
+    <p>${esc(team().full)} · Each mission starts at what you planned. Change anything that went differently on the field.</p>
+    <div class="totals"><div><span>Planned</span><b id="tPlan">0</b></div><div><span>Actual</span><b id="tAct" style="color:var(--glow)">0</b></div><div><span>Difference</span><b id="tDiff">0</b></div></div>
+    <div class="tablewrap"><table class="adj"><thead><tr><th>Scoring item</th><th class="num">Time on mission</th><th>Planned</th><th>Actual result</th><th class="num">Points</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr id="row-${r.key}"><td>${r.label}</td><td class="num">${r.time==null ? "" : dur(r.time)}${r.tries>1 ? `<span class="mt">${r.tries} tries</span>` : ""}</td><td class="num">${r.plan}</td><td>${sel(r)}</td><td class="num" id="pts-${r.key}"></td></tr>`).join("")}</tbody></table></div>
+    <div class="mfoot"><button class="btn" data-x>Back to map</button><button class="btn go" data-save>Save score &amp; make map image</button></div>`, m => {
+      const calc = () => {
+        let plan=0, act=0;
+        rows.forEach(r => { const v = +m.querySelector("#adj-"+r.key).value; const pts = r.isTok ? PREC[v] : v;
+          m.querySelector("#pts-"+r.key).textContent = pts; plan += r.plan; act += pts;
+          m.querySelector("#row-"+r.key).classList.toggle("changed", pts !== r.plan); r.actual = pts; r.raw = v; });
+        m.querySelector("#tPlan").textContent = plan; m.querySelector("#tAct").textContent = act;
+        const d = act-plan; m.querySelector("#tDiff").textContent = (d>0?"+":"")+d;
+        return {plan, act};
+      };
+      m.querySelectorAll("select").forEach(s => s.onchange = calc); calc();
+      m.querySelector("[data-save]").onclick = () => { const {plan, act} = calc(); saveResult(rows, plan, act, false); };
+    }, true);
+}
+// Saves the final score, then builds the image and sends it to the sheet. noPlan = after-run scoring (no planned points).
+function saveResult(rows, plan, act, noPlan){
+  lastResult = { team: team().full, date: new Date().toLocaleString(), planned: plan, actual: act, noPlan,
+    items: rows.map(r=>({label:r.label, planned:r.plan, actual:r.actual, tokens: r.isTok ? r.raw : undefined, time: r.time ?? null, tries: r.tries || 0})),
+    route: routeText(), sent: false,
+    avgLaunch: (st => st.gaps.length ? Math.round(st.avgLaunch*10)/10 : null)(runStats()),
+    scores: Object.fromEntries(rows.map(r => [r.key, r.actual])) };
+  history.unshift(lastResult); close(); commit(); showImage(lastResult, true);
+}
+
+/* After-run scoring: every mission clicked during the match, in order, with its score options.
+   Starts from 20 inspection + 20 Fragile Microhabitats + precision points for the tokens left. */
+function openAfterScoring(){
+  if(closeOpen(elapsed())) commit();
+  const visits = S.steps.map((s,i)=>({s,i})).filter(v => v.s.type==="mission");
+  const pick = {}; visits.forEach(v => { if(v.s.points!=null) pick[v.i] = v.s.points; });
+  const extra = [
+    {key:"prec", label:"Precision tokens remaining", isTok:true, opts:[0,1,2,3,4,5,6], def:tokens()},
+    {key:"insp", label:"Equipment inspection", opts:[0,20], def:20},
+    {key:"m10", label:"M10 Fragile Microhabitats", opts:[20,10,0], def:20, names:{20:"No damage (20)",10:"Reduced by 10 (10)",0:"Reduced by 20 (0)"}}];
+  const tries = {};
+  const list = visits.map((v,k) => { const s = v.s; tries[s.id] = (tries[s.id]||0)+1; const n = tries[s.id];
+    return `<div class="srow ${pick[v.i]==null?"todo":""}" data-row="${v.i}"><div class="sinfo"><b>${k+1}. ${mLabel(s.id)}</b>${n>1?` <small class="try" style="display:inline;color:var(--gold)">try ${n}</small>`:""}
+      <small>${fmt(s.t)} – ${fmt(s.ts ?? s.t)} · ${dur(stepTime(s))} on mission</small></div>
+      <div class="opts">${[0,...MISSIONS[s.id].opts].map(o=>`<button class="opt ${pick[v.i]===o?"sel":""}" data-i="${v.i}" data-v="${o}">${o}</button>`).join("")}</div></div>`; }).join("");
+  modal(`<h3>Score this match</h3>
+    <p>${esc(team().full)} · Here is every mission you clicked, in order. Pick the points each one earned. A mission only counts once, so if you tried it more than once, its best try counts.</p>
+    <div class="totals"><div><span>Total score</span><b id="aTot" style="color:var(--glow)">0</b></div><div><span>Missions left to score</span><b id="aLeft">0</b></div></div>
+    ${list || `<p class="empty">No missions were clicked during this match.</p>`}
+    <div class="tablewrap" style="margin-top:14px"><table class="adj"><thead><tr><th>Also counted</th><th>Result</th><th class="num">Points</th></tr></thead><tbody>
+    ${extra.map(r=>`<tr><td>${r.label}</td><td><select id="aft-${r.key}">${r.opts.map(v=>`<option value="${v}" ${v===r.def?"selected":""}>${r.isTok ? `${v} left → ${PREC[v]} pts` : r.names ? r.names[v] : v}</option>`).join("")}</select></td><td class="num" id="aftp-${r.key}"></td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="mfoot"><button class="btn" data-x>Back to map</button><button class="btn go" data-save>Save score &amp; make map image</button></div>`, m => {
+      const calc = () => {
+        const best = {}; visits.forEach(v => { best[v.s.id] = Math.max(best[v.s.id] ?? 0, pick[v.i] ?? 0); });
+        let tot = Object.values(best).reduce((a,b)=>a+b,0);
+        extra.forEach(r => { const v = +m.querySelector("#aft-"+r.key).value, pts = r.isTok ? PREC[v] : v; r.raw = v; r.actual = pts; tot += pts; m.querySelector("#aftp-"+r.key).textContent = pts; });
+        m.querySelector("#aTot").textContent = tot;
+        m.querySelector("#aLeft").textContent = visits.filter(v => pick[v.i]==null).length;
+        return {best, tot};
+      };
+      m.querySelectorAll("[data-i]").forEach(b => b.onclick = () => {
+        const i = +b.dataset.i; pick[i] = +b.dataset.v;
+        m.querySelectorAll(`[data-i="${i}"]`).forEach(x => x.classList.toggle("sel", x===b));
+        m.querySelector(`[data-row="${i}"]`).classList.remove("todo"); calc();
       });
-      return obj;
-    })
-    .filter(o => o["Team Name"] !== "");   // skip blank rows
+      m.querySelectorAll("select").forEach(x => x.onchange = calc); calc();
+      m.querySelector("[data-save]").onclick = () => {
+        const left = visits.filter(v => pick[v.i]==null).length;
+        if(left && !m.dataset.warned){ m.dataset.warned = 1; toast(`${left} mission${left>1?"s are":" is"} not scored yet and will count as 0. Press Save again to continue.`); return; }
+        visits.forEach(v => { v.s.points = pick[v.i] ?? 0; });
+        const {tot} = calc();
+        const p = planned();
+        const rows = ORDER.map(id => ({key:"m"+id, label:mLabel(id), plan:p[id]||0, actual:p[id]||0, time:missionTime(id), tries:attempts(id).length}));
+        extra.forEach(r => rows.push({key:r.key, label:r.label, plan:r.actual, actual:r.actual, raw:r.raw, isTok:!!r.isTok}));
+        saveResult(rows, tot, tot, true);
+      };
+    }, true);
+}
+function routeText(){ return S.steps.map(s => s.type==="out" ? `${LAUNCH[s.side].label} ↑ ${fmt(s.t)}` : s.type==="in" ? `${LAUNCH[s.side].label} ↓ ${fmt(s.t)}` : `M${s.id} +${s.points||0} (${fmt(s.t)})`).join(" → "); }
 
-  return (cache[sheetName] = rows);
+/* ================= HISTORY / REPORT ================= */
+function renderHistory(){
+  $("history").innerHTML = history.length ? history.map((h,i)=>`<div><b>${h.best&&h.best.high?"🏆 ":""}${esc(h.team)}</b><span><b>${h.actual}</b>${h.noPlan ? " pts" : ` / ${h.planned} planned`}</span>
+    <small>${esc(h.date)}${SHEET_URL && h.scores ? (h.sent ? ` · <span class="sent">in Google Sheet ✓</span>` : ` · <button class="linkbtn" data-send="${i}">Send to Google Sheet</button>`) : ""}</small></div>`).join("")
+    : `<span class="empty">When the timer ends and you save a final score, it is listed here.</span>`;
+  $("history").querySelectorAll("[data-send]").forEach(b => b.onclick = () => resend(history[+b.dataset.send]));
 }
 
-// ---------- Sorting ----------
-function sortValue(row, col) {
-  const v = row[col.key];
-  if (v === "") return null;
-  switch (col.type) {
-    case "number": {
-      const n = parseFloat(v.replace(/,/g, ""));
-      return isNaN(n) ? null : n;
-    }
-    case "rank": {
-      const n = parseInt(v, 10);          // "1st" -> 1
-      return isNaN(n) ? null : n;
-    }
-    case "advance": {
-      // "Yes 11" ranks above "No"; among Yes, sort by the trailing number
-      const m = v.match(/^yes\s*(\d+)?/i);
-      if (m) return m[1] ? parseInt(m[1], 10) : 0;
-      return 100000;                      // "No" and anything else
-    }
-    default:
-      return v.toLowerCase();
+/* ================= GOOGLE SHEET ================= */
+// Sends one row: Timestamp, Team Name, Total Score, Inspection Bonus, M01–M15, Precision Tokens (points).
+// Returns {ok} or {ok:false, what, why}; the caller decides how to show it.
+async function sendToSheet(r, jpeg){
+  if(!r || !r.scores) return {ok:false, what:"This match has no scores to send.", why:""};
+  if(!SHEET_URL) return {ok:false, off:true, what:"The Google Sheet link (SHEET_URL) is empty in index.html.", why:"Paste the web app URL ending in <b>/exec</b> between the quotes and upload index.html to GitHub."};
+  const sc = r.scores, row = {team: r.team, total: r.actual, inspection: sc.insp ?? 0, precision: sc.prec ?? 0, missions: {}};
+  for(let id=1; id<=15; id++) row.missions[id] = id===10 ? (sc.m10 ?? 0) : (sc["m"+id] ?? 0);
+  if(jpeg){ row.image = jpeg; row.imageName = imageName(r, "jpg"); }
+  if(r.avgLaunch != null) row.avgLaunch = r.avgLaunch;
+  let res, out;
+  try{ res = await fetch(SHEET_URL, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(row)}); }
+  catch(e){ return {ok:false, what:"The app couldn't connect to the Google Sheet script.",
+    why:`Usually the deployment's <b>Who has access</b> is not <b>Anyone</b> (school Google accounts sometimes only allow "Anyone in your school"), or the link isn't the <b>/exec</b> web app URL. The preview here also blocks outside connections, so test on the GitHub site.`}; }
+  try{ out = await res.json(); }
+  catch(e){ return {ok:false, what:`The script answered with something other than a result (status ${res.status}).`,
+    why:"Google probably showed a sign-in page instead of running the script. Set <b>Who has access</b> to <b>Anyone</b> and deploy a new version."}; }
+  if(!out.ok) return {ok:false, what:"The script ran but couldn't add the row.",
+    why:`Google said: <code>${esc(out.error||"unknown error")}</code>. If it mentions <b>null</b> or <b>appendRow</b>, the tab name in the script doesn't match a tab in the sheet.`};
+  r.sent = true; save(); renderHistory();
+  return {ok:true, emailed: out.emailed || 0, emailNote: out.emailNote || "", drive: !!out.savedToDrive, driveNote: out.driveNote || "", highScore: !!out.highScore, previousBest: out.previousBest};
+}
+const sheetMsg = res => res.ok ? `${res.highScore ? `<div class="sheetnote hs">🏆 New high score! Previous best was ${res.previousBest}. Marked in the sheet.</div>` : ""}<div class="sheetnote ok">✓ Added to the Google Sheet.${res.emailed ? ` Emailed to ${res.emailed} address${res.emailed>1?"es":""}.` : ""}${res.drive ? " Saved to Google Drive." : ""}</div>${res.emailNote ? `<div class="sheetnote bad">${esc(res.emailNote)}</div>` : ""}${res.driveNote ? `<div class="sheetnote bad">${esc(res.driveNote)}</div>` : ""}`
+  : res.off ? `<div class="sheetnote">Google Sheet sending is off: ${res.what}</div>`
+  : `<div class="sheetnote bad"><b>${res.title || "Not added to the Google Sheet."}</b> ${res.what} ${res.why}${res.title ? "" : "<br>The match is still saved here. After fixing it, click <b>Send to Google Sheet</b> under Saved matches."}</div>`;
+function sheetProblem(what, why, title){
+  modal(`<h3>Google Sheet</h3>${sheetMsg({ok:false, what, why, title})}<div class="mfoot"><button class="btn" data-x>OK</button></div>`);
+}
+async function resend(r){
+  toast("Sending to the Google Sheet…");
+  let jpeg = null; try{ jpeg = (await buildImage(r)).toDataURL("image/jpeg", .85).split(",")[1]; }catch(e){}
+  const res = await sendToSheet(r, jpeg); renderHistory();
+  if(res.ok && !res.emailNote) toast(`${r.team}: ${r.actual} points added to the Google Sheet${res.emailed ? " and emailed" : ""}.`);
+  else if(res.ok) modal(`<h3>Google Sheet</h3>${sheetMsg(res)}<div class="mfoot"><button class="btn" data-x>OK</button></div>`);
+  else sheetProblem(res.what, res.why);
+}
+// "Test Google Sheet" button: checks the script link without adding a row
+async function testSheet(){
+  if(!SHEET_URL) return sheetProblem("The Google Sheet link (SHEET_URL) is empty in index.html.", "Paste the web app URL ending in <b>/exec</b> between the quotes and upload index.html to GitHub.", "Connection test failed.");
+  try{
+    const res = await fetch(SHEET_URL); const out = await res.json();
+    if(!out.ok) throw 0;
+    modal(`<h3>Google Sheet connection works</h3><div class="sheetnote ok">✓ The script answered: “${esc(out.message||"ok")}”</div><p>Saved scores will be added to the sheet.</p><div class="mfoot"><button class="btn go" data-x>OK</button></div>`);
+  }catch(e){
+    sheetProblem("The test couldn't reach the Google Sheet script.", `Check that the deployment is a <b>Web app</b> with <b>Execute as: Me</b> and <b>Who has access: Anyone</b>, and that the link ends in <b>/exec</b>. Link in the app now: <code>${esc(SHEET_URL)}</code>`, "Connection test failed.");
   }
 }
+$("sheetTest").onclick = testSheet;
+function renderReport(){
+  const p = planned(), r = lastResult && lastResult.team===team().full ? lastResult : null;
+  const items = r ? r.items : [
+    ...ORDER.map(id=>({label:mLabel(id),planned:p[id]||0})),
+    {label:"Precision tokens",planned:50},{label:"Equipment inspection",planned:20},{label:"M10 Fragile Microhabitats",planned:20}];
+  $("report").innerHTML = `<h1>${esc(team().full)}</h1><div>FIRST LEGO League · BioGlow · ${esc(r ? r.date : new Date().toLocaleString())}</div>
+    <p><b>Planned score:</b> ${r ? r.planned : 90+Object.values(p).reduce((a,b)=>a+b,0)}${r ? ` &nbsp; <b>Actual score:</b> ${r.actual}` : ""}</p>
+    <table><thead><tr><th>Scoring item</th><th class="num">Planned</th>${r?'<th class="num">Actual</th>':""}</tr></thead><tbody>
+    ${items.map(i=>`<tr><td>${esc(i.label)}${i.tokens!==undefined?` (${i.tokens} left)`:""}</td><td class="num">${i.planned}</td>${r?`<td class="num">${i.actual}</td>`:""}</tr>`).join("")}
+    </tbody></table><p><b>Route:</b> ${esc(routeText()) || "none"}</p>`;
+}
+$("printBtn").onclick = () => { renderReport(); window.print(); };
+$("csvBtn").onclick = () => {
+  if(!history.length) return toast("No saved matches yet.");
+  const labels = history[0].items.map(i=>i.label);
+  const q = v => `"${String(v).replace(/"/g,'""')}"`;
+  const lines = [["Team","Date","Planned","Actual",...labels.map(l=>l+" (actual)"),"Route"].map(q).join(",")];
+  history.forEach(h => lines.push([h.team,h.date,h.planned,h.actual,...h.items.map(i=>i.actual),h.route].map(q).join(",")));
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([lines.join("\n")],{type:"text/csv"}));
+  a.download = "bioglow-scores.csv"; document.body.appendChild(a); a.click(); a.remove();
+};
+$("histClear").onclick = () => modal(`<h3>Clear all saved matches?</h3><p>This removes every saved score on this device.</p>
+  <div class="mfoot"><button class="btn" data-x>Cancel</button><button class="btn red" data-ok>Clear history</button></div>`,
+  m => m.querySelector("[data-ok]").onclick = () => { history=[]; lastResult=null; close(); commit(); });
 
-function sortRows(rows) {
-  const col = COLUMNS.find(c => c.key === sort.key);
-  const dir = sort.dir === "asc" ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const va = sortValue(a, col), vb = sortValue(b, col);
-    // Blanks always go to the bottom, whichever direction
-    if (va === null && vb === null) return a["Team Name"].localeCompare(b["Team Name"]);
-    if (va === null) return 1;
-    if (vb === null) return -1;
-    let cmp = typeof va === "string" ? va.localeCompare(vb) : va - vb;
-    if (cmp === 0) {
-      // Tie-break on Best Score (highest first), then team name
-      const ba = sortValue(a, COLUMNS[4]), bb = sortValue(b, COLUMNS[4]);
-      if (ba !== bb) return (bb ?? -1) - (ba ?? -1);
-      return a["Team Name"].localeCompare(b["Team Name"]);
+
+/* ================= RESULT IMAGE ================= */
+function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+function currentResult(){
+  if(lastResult && lastResult.team===team().full) return lastResult;
+  const p = planned();
+  const items = [...ORDER.map(id=>({label:mLabel(id),planned:p[id]||0,actual:p[id]||0,time:missionTime(id),tries:attempts(id).length})),
+    {label:"Precision tokens remaining",planned:50,actual:PREC[tokens()],tokens:tokens()},
+    {label:"Equipment inspection",planned:20,actual:20},{label:"M10 Fragile Microhabitats",planned:20,actual:20}];
+  const t = items.reduce((a,i)=>a+i.planned,0);
+  return {team:team().full, date:new Date().toLocaleString(), planned:t, actual:items.reduce((a,i)=>a+i.actual,0), items, route:routeText(), planOnly:true};
+}
+async function buildImage(r){
+  try{ await document.fonts.ready; }catch(e){}
+  const W=3600, HEAD=330, MH=2037, COLS=3, PER=Math.ceil(r.items.length/COLS), RH=86;
+  const PANEL = 170 + PER*RH + 60;
+  const D="'Chakra Petch', 'Trebuchet MS', sans-serif", B="'Nunito Sans', system-ui, sans-serif";
+  const ctx0 = document.createElement("canvas").getContext("2d");
+  ctx0.font = `600 46px ${B}`;
+  const routeLines = wrap(ctx0, "Route: " + (r.route || "none"), W-200);
+  const TL = timelineSVG(W), ST = runStats(), SROWS = Math.max(1, Math.ceil(ST.runs.length/2));
+  const TLH = 150 + TL.H + 40 + 350 + SROWS*76;
+  const H = HEAD + MH + TLH + PANEL + routeLines.length*62 + 90;
+  const c = document.createElement("canvas"); c.width=W; c.height=H; const g=c.getContext("2d");
+  g.fillStyle="#0b1a14"; g.fillRect(0,0,W,H);
+  // header
+  g.fillStyle="#7dffb2"; g.font=`700 44px ${D}`; g.fillText("FIRST LEGO LEAGUE · BIOGLOW", 90, 100);
+  g.fillStyle="#e9f5ee"; g.font=`700 120px ${D}`; g.fillText(r.team, 90, 225);
+  g.fillStyle="#9fbfae"; g.font=`600 46px ${B}`; g.fillText(r.date + (r.planOnly ? " · planned run" : " · final score"), 90, 295);
+  g.textAlign="right";
+  g.fillStyle="#9fbfae"; g.font=`700 44px ${D}`; g.fillText(r.planOnly ? "PLANNED SCORE" : "FINAL SCORE", W-90, 100);
+  g.fillStyle="#7dffb2"; g.font=`700 190px ${D}`; g.fillText(String(r.actual), W-90, 260);
+  // high-score badge to the left of the score
+  if(!r.planOnly && r.best){ const sw = g.measureText(String(r.actual)).width, bx = W-90-sw-60;
+    if(r.best.high){
+      g.font=`700 64px ${D}`; const txt = "🏆 NEW HIGH SCORE!", tw = g.measureText(txt).width;
+      g.fillStyle="#ffd166"; roundRect(g, bx-tw-60, 130, tw+60, 110, 26); g.fill();
+      g.fillStyle="#2a1d00"; g.fillText(txt, bx-30, 208);
+      g.font=`600 42px ${B}`; g.fillStyle="#ffd166"; g.fillText(`Previous best ${r.best.prev}`, bx-30, 292);
+    } else {
+      g.font=`600 46px ${B}`; g.fillStyle="#9fbfae";
+      g.fillText(r.best.count ? `Team best ${r.best.prev}` : "First recorded score", bx, 200);
     }
-    return cmp * dir;
+  }
+  if(!r.planOnly && !r.noPlan){ const d=r.actual-r.planned; g.fillStyle="#9fbfae"; g.font=`600 46px ${B}`;
+    g.fillText(`Planned ${r.planned} · ${d>=0?"+":""}${d}`, W-90, 315); }
+  g.textAlign="left";
+  // map + route overlay
+  let map; try{ map = await loadImg("map-hd.jpg"); }catch(e){ map = await loadImg("map.jpg"); }
+  g.drawImage(map, 0, HEAD, W, MH);
+  const clone = svg.cloneNode(true);
+  clone.setAttribute("xmlns","http://www.w3.org/2000/svg"); clone.setAttribute("width",W); clone.setAttribute("height",MH);
+  clone.querySelectorAll("title").forEach(t=>t.remove());
+  const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)],{type:"image/svg+xml"}));
+  try{ g.drawImage(await loadImg(url), 0, HEAD, W, MH); } finally { URL.revokeObjectURL(url); }
+  // match timeline
+  let y = HEAD + MH + 110;
+  g.fillStyle="#9fbfae"; g.font=`700 52px ${D}`; g.fillText("MATCH TIMELINE", 90, y);
+  g.font=`600 36px ${B}`; g.textAlign="right";
+  g.fillText("↑ leaves launch   ↓ returns   purple ↓ precision token   ● mission points   line: red/blue = in launch, green = on a run", W-90, y); g.textAlign="left";
+  const tUrl = URL.createObjectURL(new Blob([TL.svg],{type:"image/svg+xml"}));
+  try{ g.drawImage(await loadImg(tUrl), 0, y+40, W, TL.H); } finally { URL.revokeObjectURL(tUrl); }
+  // run statistics
+  let sy = y + 40 + TL.H + 40;
+  const tiles = statTiles(ST).map(([l,v]) => [l.toUpperCase(), v]);
+  const tw = (W-180-4*40)/5;
+  // Warnings shown in red: average launch time over 10 seconds, and more time in launch than out on runs
+  const warn = [false,
+    ST.gaps.length > 0 && Math.round(ST.avgLaunch) > 10,
+    ST.runs.length > 0 && Math.round(ST.inLaunch) > Math.round(ST.inRuns),
+    ST.runs.length > 0 && Math.round(ST.inLaunch) > Math.round(ST.inRuns),
+    false];
+  tiles.forEach(([lab,val],i) => { const x = 90 + i*(tw+40);
+    g.fillStyle = warn[i] ? "#4a1416" : "#183428"; g.fillRect(x, sy, tw, 240);
+    if(warn[i]){ g.strokeStyle="#e0383b"; g.lineWidth=8; g.strokeRect(x+4, sy+4, tw-8, 232); }
+    g.fillStyle = warn[i] ? "#ff9a9c" : "#9fbfae"; g.font=`700 40px ${D}`; g.fillText(lab, x+36, sy+64);
+    g.fillStyle = warn[i] ? "#ff6b6e" : "#e9f5ee"; g.font=`700 92px ${D}`; g.fillText(val, x+36, sy+160);
+    // Average launch time vs. this team's last match: green ↓ = faster, red ↑ = slower
+    let ex = x + 36 + g.measureText(val).width;   // where the next thing after the value can go
+    // gold stars for a quick average launch time
+    const nStars = i===1 ? launchStars(ST) : 0;
+    for(let k=0; k<nStars; k++){ drawStar(g, ex + 52 + k*64, sy + 126, 28, "#ffd166"); }
+    if(nStars) ex += 24 + nStars*64;
+    if(i===1 && r.avgLaunch!=null && typeof r.prevAvg==="number" && r.avgLaunch!==r.prevAvg){
+      const up = r.avgLaunch > r.prevAvg, ax = ex + 60, ay = sy + 128, col = up ? "#e0383b" : GREEN;
+      g.save(); g.translate(ax, ay); g.fillStyle = col; g.beginPath(); g.moveTo(0, up?-46:46); g.lineTo(34, up?-6:6); g.lineTo(13, up?-6:6);
+      g.lineTo(13, up?44:-44); g.lineTo(-13, up?44:-44); g.lineTo(-13, up?-6:6); g.lineTo(-34, up?-6:6); g.closePath(); g.fill(); g.restore();
+      g.fillStyle="#9fbfae"; g.font=`600 34px ${B}`; g.fillText(`last match ${dur(r.prevAvg)}`, x + 36, sy + 212);
+    } });
+  sy += 240 + 90;
+  g.fillStyle="#9fbfae"; g.font=`700 44px ${D}`; g.fillText("POINTS PER RUN", 90, sy);
+  sy += 30;
+  if(!ST.runs.length){ g.fillStyle="#9fbfae"; g.font=`600 42px ${B}`; g.fillText("No runs recorded.", 90, sy+50); }
+  ST.runs.forEach((r,i) => { const col = i%2, row = Math.floor(i/2), x = 90 + col*((W-180)/2), yy = sy + row*76 + 54;
+    g.font=`700 44px ${D}`; g.fillStyle="#e9f5ee"; g.fillText(`Run ${i+1}`, x, yy);
+    g.font=`600 40px ${B}`; g.fillStyle = LAUNCH[r.side].col; g.fillText(`${LAUNCH[r.side].label} ↑ ${fmt(r.start)}`, x+200, yy);
+    g.fillStyle="#9fbfae"; g.fillText("→", x+470, yy);
+    g.fillStyle = r.open ? "#ffd166" : LAUNCH[r.endSide].col; g.fillText(r.open ? "still out" : `${LAUNCH[r.endSide].label} ↓ ${fmt(r.end)}`, x+530, yy);
+    g.fillStyle="#9fbfae"; g.fillText(`run time ${dur(r.len)}`, x+840, yy);
+    g.font=`700 48px ${D}`; g.fillStyle="#7dffb2"; g.textAlign="right"; g.fillText(`${r.pts} pts`, x+(W-180)/2-80, yy); g.textAlign="left"; });
+  // breakdown
+  y = HEAD + MH + TLH + 110;
+  g.fillStyle="#9fbfae"; g.font=`700 52px ${D}`; g.fillText("POINTS BY MISSION", 90, y);
+  g.font=`600 36px ${B}`; g.textAlign="right"; g.fillText(r.planOnly ? "time on mission · planned points" : r.noPlan ? "time on mission · earned" : "time on mission · earned · (planned)", W-90, y); g.textAlign="left";
+  const colW = (W-180)/COLS, top = y + 50;
+  r.items.forEach((it,i) => {
+    const col = Math.floor(i/PER), row = i%PER, x = 90 + col*colW, yy = top + row*RH;
+    if(row%2===0){ g.fillStyle="#11261d"; g.fillRect(x-20, yy, colW-40, RH); }
+    g.fillStyle="#e9f5ee"; g.font=`600 44px ${B}`;
+    g.fillText(it.label + (it.tokens!==undefined ? ` (${it.tokens} left)` : ""), x, yy+58);
+    if(it.time!=null){ g.textAlign="right"; g.font=`600 36px ${B}`; g.fillStyle="#9fbfae";
+      g.fillText(dur(it.time) + (it.tries>1 ? ` · ${it.tries} tries` : ""), x+colW-330, yy+58); g.textAlign="left"; }
+    g.textAlign="right";
+    const changed = !r.planOnly && !r.noPlan && it.actual !== it.planned;
+    g.font=`700 50px ${D}`; g.fillStyle = it.actual ? (changed ? "#ffd166" : "#7dffb2") : "#6f8f7f";
+    g.fillText(String(it.actual), x+colW-210, yy+60);
+    if(!r.planOnly && !r.noPlan){ g.font=`600 38px ${B}`; g.fillStyle="#9fbfae"; g.fillText(`(${it.planned})`, x+colW-60, yy+58); }
+    g.textAlign="left";
   });
+  y = top + PER*RH + 90;
+  g.fillStyle="#e9f5ee"; g.font=`600 46px ${B}`;
+  routeLines.forEach((l,i)=>g.fillText(l, 90, y + i*62));
+  return c;
 }
-
-// Sensible first-click direction per column
-function defaultDir(col) {
-  if (col.type === "number" && col.key !== "Number of Awards") return "desc";
-  if (col.key === "Number of Awards") return "desc";
-  return "asc";   // text A→Z, rank 1st first, advance Yes first
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function drawStar(g, cx, cy, r, col){
+  g.save(); g.beginPath();
+  for(let k=0;k<10;k++){ const a = -Math.PI/2 + k*Math.PI/5, rr = k%2 ? r*.45 : r; g.lineTo(cx + rr*Math.cos(a), cy + rr*Math.sin(a)); }
+  g.closePath(); g.fillStyle = col; g.fill(); g.restore();
 }
-
-// ---------- Rendering ----------
-const esc = s => String(s).replace(/[&<>"']/g, c =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-function cellHTML(row, col) {
-  const v = row[col.key];
-  if (col.key === "Best Score" && v === "") return '<span class="na">N/A</span>';
-  if (col.key === "Advance") {
-    if (/^yes/i.test(v)) return `<span class="pill yes">${esc(v)}</span>`;
-    if (v) return `<span class="pill no">${esc(v)}</span>`;
+function wrap(g, text, max){ const out=[]; let line="";
+  text.split(" ").forEach(w => { const t = line ? line+" "+w : w; if(g.measureText(t).width > max && line){ out.push(line); line=w; } else line=t; });
+  if(line) out.push(line); return out; }
+// File name: Team Name, score, then date, e.g. "Canopy Coders 290 2026-11-18.png"
+function imageName(r, ext){ const d = new Date();
+  return `${r.team.replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g," ")} ${r.actual} ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}.${ext}`; }
+// Asks the script for this team's best recorded score (before this match), so the image can show a high-score badge.
+async function lookupBest(r){
+  if(r.prevAvg === undefined){   // fallback: this team's previous saved match on this device
+    const older = history.slice(history.indexOf(r)+1).find(h => h.team===r.team && h.avgLaunch!=null);
+    if(older) r.prevAvg = older.avgLaunch;
   }
-  if (v === "" && col.num) return '<span class="na">—</span>';
-  return esc(v);
+  if(!SHEET_URL || r.best) return;
+  try{
+    const ctl = new AbortController(), timer = setTimeout(()=>ctl.abort(), 6000);
+    const out = await (await fetch(`${SHEET_URL}?best=${encodeURIComponent(r.team)}`, {signal: ctl.signal})).json();
+    clearTimeout(timer);
+    if(out.ok && typeof out.count==="number") r.best = {count: out.count, prev: out.best, high: out.count>0 && r.actual>out.best};
+    if(out.ok && typeof out.lastAvg==="number") r.prevAvg = out.lastAvg;
+  }catch(e){}
 }
-
-function render() {
-  const card = document.getElementById("card");
-  const rows = cache[current.sheet];
-  if (!rows) return;
-
-  const q = norm(filterText);
-  const visible = sortRows(rows).filter(r =>
-    !q || COLUMNS.some(c => norm(r[c.key]).includes(q)));
-
-  const scored = rows.filter(r => r["Best Score"] !== "").length;
-  const advancing = rows.filter(r => /^yes/i.test(r["Advance"])).length;
-  document.getElementById("meta").textContent =
-    `${rows.length} teams · ${scored} with scores · ${advancing} advancing`;
-
-  if (!visible.length) {
-    card.innerHTML = `<div class="status">${rows.length ? "No teams match that filter." : "No teams listed on this tab yet."}</div>`;
-    return;
-  }
-
-  const head = COLUMNS.map(col => {
-    const active = sort.key === col.key;
-    const arrow = active ? (sort.dir === "asc" ? "▲" : "▼") : "";
-    return `<th class="${col.num ? "num" : ""} ${active ? "sorted" : ""}" data-key="${esc(col.key)}"
-              title="Sort by ${esc(col.key)}">${esc(col.key)} <span class="arrow">${arrow}</span></th>`;
-  }).join("");
-
-  const body = visible.map(r => "<tr>" + COLUMNS.map(col => {
-    const classes = [col.num ? "num" : "", col.cls || "", col.key === "Team Name" ? "team" : ""].join(" ").trim();
-    return `<td class="${classes}">${cellHTML(r, col)}</td>`;
-  }).join("") + "</tr>").join("");
-
-  card.innerHTML = `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-
-  card.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
-    const col = COLUMNS.find(c => c.key === th.dataset.key);
-    if (sort.key === col.key) sort.dir = sort.dir === "asc" ? "desc" : "asc";
-    else sort = { key: col.key, dir: defaultDir(col) };
-    render();
-  }));
+async function showImage(r, send){
+  modal(`<h3>Building the map image…</h3><p>This takes a moment.</p>`, null, true);
+  if(send){ await lookupBest(r); save(); }
+  let c; try{ c = await buildImage(r); }catch(e){ close(); return toast("The image could not be built. Try again."); }
+  const name = imageName(r, "png");
+  const src = c.toDataURL("image/png");
+  const sending = send ? sendToSheet(r, c.toDataURL("image/jpeg", .85).split(",")[1]) : null;
+  modal(`<h3>${r.best&&r.best.high?"🏆 New high score! ":""}${esc(r.team)} · ${r.actual} points</h3>
+    <p>Here is the route map, match timeline and score breakdown. Save it to keep or share. On a phone or tablet you can also press and hold the image to save it.</p>
+    <div id="sheetStatus">${sending ? `<div class="sheetnote">Sending to the Google Sheet…</div>` : ""}</div>
+    <img src="${src}" alt="Route map and score breakdown for ${esc(r.team)}" style="width:100%;border-radius:10px;border:1px solid var(--line);margin-bottom:14px">
+    <div class="mfoot"><button class="btn" data-x>Close</button><button class="btn go" data-ok>Save image</button></div>`, m => {
+      m.querySelector("[data-ok]").onclick = () => c.toBlob(b => {
+        const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = name;
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+      }, "image/png");
+    }, true);
+  if(sending) sending.then(res => { const el = $("sheetStatus"); if(el) el.innerHTML = sheetMsg(res); else if(!res.ok && !res.off) sheetProblem(res.what, res.why); });
 }
+$("imgBtn").onclick = () => showImage(currentResult());
 
-async function showLocation(loc, force = false) {
-  current = loc;
-  document.querySelectorAll("#tabs button").forEach(b =>
-    b.classList.toggle("active", b.dataset.sheet === loc.sheet));
-  document.getElementById("locTitle").textContent = `${loc.label} Qualifier`;
-  document.getElementById("meta").textContent = "";
-  const card = document.getElementById("card");
-
-  if (!cache[loc.sheet] || force) card.innerHTML = '<div class="status">Loading…</div>';
-  try {
-    await loadSheet(loc.sheet, force);
-    if (current === loc) render();
-  } catch (err) {
-    if (current === loc) {
-      card.innerHTML = `<div class="status error">Couldn't load the "${esc(loc.sheet)}" tab (${esc(err.message)}).<br>
-        Make sure the spreadsheet is shared as "Anyone with the link can view".</div>`;
-    }
-  }
+/* ================= UI HELPERS ================= */
+function modal(html, wire, wide){
+  $("modalRoot").innerHTML = `<div class="scrim"><div class="modal ${wide?"wide":""}" role="dialog" aria-modal="true">${html}</div></div>`;
+  const m = $("modalRoot").querySelector(".modal");
+  m.querySelectorAll("[data-x]").forEach(b=>b.onclick=close);
+  $("modalRoot").querySelector(".scrim").onclick = e => { if(e.target.classList.contains("scrim")) close(); };
+  wire && wire(m);
+  const f = m.querySelector(".opt") || m.querySelector("[data-ok]") || m.querySelector("select") || m.querySelector("button"); f && f.focus({preventScroll:true}); m.scrollTop = 0;
 }
+function close(){ $("modalRoot").innerHTML = ""; }
+document.addEventListener("keydown", e => { if(e.key==="Escape") close(); });
+function flash(side, text){
+  document.querySelectorAll(".flash").forEach(f=>f.remove());
+  const f = document.createElement("div"); f.className = `flash ${side}`; f.innerHTML = `<span>${text}</span>`;
+  document.body.appendChild(f); setTimeout(()=>f.remove(), 950);
+}
+let tt; function toast(t){ let el=document.querySelector(".toast"); if(!el){ el=document.createElement("div"); el.className="toast"; document.body.appendChild(el); }
+  el.textContent=t; clearTimeout(tt); tt=setTimeout(()=>el.remove(),3200); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+try{ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }catch(e){}
 
-// ---------- Setup ----------
-const tabs = document.getElementById("tabs");
-LOCATIONS.forEach(loc => {
-  const b = document.createElement("button");
-  b.textContent = loc.label;
-  b.dataset.sheet = loc.sheet;
-  b.addEventListener("click", () => {
-    sort = { ...DEFAULT_SORT };        // each tab opens sorted by Best Score
-    showLocation(loc);
-  });
-  tabs.appendChild(b);
-});
-
-document.getElementById("resetSort").addEventListener("click", () => {
-  sort = { ...DEFAULT_SORT }; render();
-});
-document.getElementById("refresh").addEventListener("click", () => showLocation(current, true));
-document.getElementById("filter").addEventListener("input", e => {
-  filterText = e.target.value; render();
-});
-
-showLocation(LOCATIONS[0]);
+showClock(); render();
+try{ speechSynthesis.getVoices(); }catch(e){}
+})();
 </script>
+
 </body>
 </html>

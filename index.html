@@ -355,7 +355,8 @@
             name: entry.name,
             teacher: entry.teacher || '',
             timeOut: fmtClock(entry.out),
-            timeIn: fmtClock(entry.back)
+            timeIn: fmtClock(entry.back),
+            timeGone: fmtDuration((entry.back - entry.out) / 1000)
           });
         }
         state.bathroom[gender] = null;

@@ -52,7 +52,11 @@
       color: #3b0764; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.2s;
     }
     .hallway-btn.active-timer { background-color: #ef4444; color: #fff; }
-    .hallway-btn.expired-timer { background-color: #22c55e; color: #fff; }
+    .hallway-btn.expired-timer { animation: overdue-flash 1s steps(1, end) infinite; }
+    @keyframes overdue-flash {
+      0%   { background-color: #facc15; color: #422006; }
+      50%  { background-color: #ea580c; color: #fff; }
+    }
     .timer-subtext { font-size: 1.2rem; margin-top: 4px; }
 
     /* Top-Right: Challenge Window */
@@ -135,6 +139,7 @@
     const TZ = 'America/Chicago';
     const STORAGE_KEY = 'classroomDashboard_v2';
     const HALLWAY_SECONDS = 300;      // 5-minute hallway timer
+    const OVERDUE_REPEAT_SEC = 60;    // repeat the "not checked back in" announcement this often
     const AUDIO_GRACE_MIN = 2;        // play a song up to 2 min late if the iPad was asleep at the exact minute
     const PDF_GRACE_MIN = 60;         // auto-export up to 60 min late if the iPad was asleep at the exact minute
 
@@ -298,6 +303,7 @@
         // Cancel a running timer, or reset an expired one back to purple
         h.endAt = null;
         h.expired = false;
+        h.lastAnnounced = null;
       } else {
         // Start 5 min countdown (stored as an end time so it stays accurate if the iPad sleeps)
         h.endAt = Date.now() + HALLWAY_SECONDS * 1000;
@@ -320,13 +326,17 @@
           }
           h.expired = true;
           saveState();
-          // Only announce if it just ran out (not if it expired long ago while the page was closed)
-          if (now - h.endAt < 60000) announceGroup(idx + 1);
         }
 
         if (h.expired) {
-          btn.className = 'hallway-btn expired-timer';
-          label.textContent = '0:00';
+          // Overdue: flash, show how long past 5 minutes, and announce every minute until tapped
+          if (btn.className !== 'hallway-btn expired-timer') btn.className = 'hallway-btn expired-timer';
+          label.textContent = `+${fmtDuration((now - h.endAt) / 1000)}`;
+          if (!h.lastAnnounced || now - h.lastAnnounced >= OVERDUE_REPEAT_SEC * 1000) {
+            h.lastAnnounced = now;
+            saveState();
+            announceGroup(idx + 1);
+          }
         } else {
           btn.className = 'hallway-btn';
           label.textContent = '';
@@ -336,7 +346,7 @@
 
     function announceGroup(groupNum) {
       if ('speechSynthesis' in window) {
-        const text = `Group ${groupNum}, Group ${groupNum}, Group ${groupNum}`;
+        const text = `Group ${groupNum}, Group ${groupNum}. Group ${groupNum} has not checked back in.`;
         window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
       }
     }
